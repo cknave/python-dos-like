@@ -1,0 +1,3 @@
+[submodule "libs/dos-like"]
+	path = libs/dos-like
+	url = https://github.com/mattiasgustavsson/dos-like.git

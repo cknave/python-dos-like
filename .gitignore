@@ -1,0 +1,7 @@
+/build
+.coverage*
+/dist
+/dos_like/_dos.*
+/*.egg-info
+.eggs
+__pycache__

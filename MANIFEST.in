@@ -1,0 +1,8 @@
+include example.py
+include libs/dos-like/LICENSE
+
+graft libs/dos-like/source
+graft tests
+
+global-exclude __pycache__
+global-exclude *.pyc
