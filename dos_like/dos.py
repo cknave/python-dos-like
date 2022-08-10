@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import collections
 import dataclasses
 import enum
-import collections
 import os
+import pathlib
 from typing import Union
 
 try:
@@ -367,7 +368,7 @@ Samples: TypeAlias = Union[buffer, list[int]]
 
 
 def _data_for_samples(samples: Samples) -> tuple[_dos.ffi.CData, int]:
-    """Return a CFFI data object for an array of shorts representing audio samples.
+    """Return CFFI data for an array of shorts representing audio samples.
 
     :param samples: a buffer of shorts, or a list of ints
     :return: a tuple of the sound data, and its size in bytes.  The __len__ of
@@ -434,10 +435,12 @@ DEFAULT_SOUNDBANK_SB16: SoundBankHandle = SoundBankHandle(
 
 class Music:
 
-    def __init__(self, music_ptr: _dos.ffi.CData, filename: str = None):
+    def __init__(self,
+                 music_ptr: _dos.ffi.CData,
+                 path: bytes | str | os.PathLike = None):
         # TODO: handle music lifecycle
         self._music_ptr = music_ptr
-        self.filename = filename
+        self.filename: str = get_filename(path)
 
 
 SoundMode = enum.Enum(
@@ -489,10 +492,12 @@ soundmode_16bit_stereo_44100: SoundMode = getattr(SoundMode,
 
 class Sound:
 
-    def __init__(self, sound_ptr: _dos.ffi.CData, filename: str = None):
+    def __init__(self,
+                 sound_ptr: _dos.ffi.CData,
+                 path: bytes | str | os.PathLike = None):
         # TODO: handle sound lifecycle
         self._sound_ptr = sound_ptr
-        self.filename = filename
+        self.filename = get_filename(path)
 
 
 KeyCode = int_with_flags.IntWithFlags(
@@ -704,6 +709,16 @@ def c_string(s: str | bytes | os.PathLike,
     return _dos.ffi.new('char[]', encoded)
 
 
+def get_filename(path: bytes | str | os.PathLike | None) -> str | None:
+    if path is None:
+        return None
+    if isinstance(path, bytes):
+        path = path.decode('utf-8')
+    if isinstance(path, str):
+        path = pathlib.Path(path)
+    return path.name
+
+
 #
 # DOS-LIKE API
 # ------------
@@ -818,7 +833,7 @@ def loadgif(filename: bytes | str | os.PathLike) -> GIF | None:
         for i in range(palcount)
     ]
     pixelbuf = _dos.ffi.buffer(pixels, width * height)
-    return GIF(filename, width, height, rgb_palette, pixelbuf)
+    return GIF(get_filename(filename), width, height, rgb_palette, pixelbuf)
 
 
 def blit(
