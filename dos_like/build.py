@@ -1,9 +1,22 @@
 #!/usr/bin/env python
 import pathlib
+import platform
 
 import cffi
 
 lib_dir = pathlib.Path(__file__).parent / '..' / 'libs' / 'dos-like' / 'source'
+
+# Linking OpenGL is different on macOS
+if platform.system() == 'Darwin':
+    platform_libs = []
+    platform_frameworks = ['-framework', 'OpenGL']
+else:
+    platform_libs = ['GL']
+    platform_frameworks = []
+
+extra_args = []
+# Uncomment if gdb is needed:
+# extra_args=['-g', '-O0'],
 
 ffibuilder = cffi.FFI()
 ffibuilder.set_source_pkgconfig(
@@ -20,9 +33,8 @@ ffibuilder.set_source_pkgconfig(
     }
     """,
     include_dirs=[lib_dir],
-    libraries=['GLEW', 'GL', 'm', 'pthread'],
-    # Uncomment if gdb is needed:
-    # extra_compile_args=['-g', '-O0'],
+    libraries=['GLEW', 'm', 'pthread'] + platform_libs,
+    extra_compile_args=extra_args + platform_frameworks,
     define_macros=[('NO_MAIN_DEF', '1')],
 )
 ffibuilder.cdef("""\
