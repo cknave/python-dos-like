@@ -4,7 +4,11 @@ import platform
 
 import cffi
 
+ffibuilder = cffi.FFI()
 lib_dir = pathlib.Path(__file__).parent / '..' / 'libs' / 'dos-like' / 'source'
+extra_args = []
+# Uncomment if gdb is needed:
+# extra_args=['-g', '-O0'],
 
 # Linking OpenGL is different on macOS
 if platform.system() == 'Darwin':
@@ -14,14 +18,21 @@ else:
     platform_libs = ['GL']
     platform_frameworks = []
 
-extra_args = []
-# Uncomment if gdb is needed:
-# extra_args=['-g', '-O0'],
+# Windows doesn't need any libraries at all
+if platform.system() == 'Windows':
+    set_source = ffibuilder.set_source
+else:
 
-ffibuilder = cffi.FFI()
-ffibuilder.set_source_pkgconfig(
+    def set_source(module: str, source: str, **kwargs):
+        ffibuilder.set_source_pkgconfig(module, ['sdl2'],
+                                        source,
+                                        libraries=['GLEW', 'm', 'pthread'] +
+                                        platform_libs,
+                                        **kwargs)
+
+
+set_source(
     'dos_like._dos',
-    ['sdl2'],
     """\
     #define DOS_IMPLEMENTATION
     #include "dos.h"
@@ -33,7 +44,6 @@ ffibuilder.set_source_pkgconfig(
     }
     """,
     include_dirs=[lib_dir],
-    libraries=['GLEW', 'm', 'pthread'] + platform_libs,
     extra_compile_args=extra_args + platform_frameworks,
     define_macros=[('NO_MAIN_DEF', '1')],
 )
