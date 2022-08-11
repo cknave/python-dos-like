@@ -466,11 +466,14 @@ class Tests(unittest.TestCase):
         # The glyph
         font += b'\x00\x08' + pixels
 
-        with tempfile.NamedTemporaryFile(mode='wb') as f:
-            f.write(font)
-            f.flush()
-            font_handle = dos.installuserfont(f.name)
-            self.assertNotEqual(0, font_handle)
+        with tempfile.NamedTemporaryFile(mode='wb', delete=False) as f:
+            try:
+                f.write(font)
+                f.close()
+                font_handle = dos.installuserfont(f.name)
+                self.assertNotEqual(0, font_handle)
+            finally:
+                os.unlink(f.name)
 
         dos.setvideomode(dos.videomode_320x200)
         dos.settextstyle(font_handle)

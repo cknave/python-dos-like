@@ -61,7 +61,9 @@ You can also use python-dos-like in the Python REPL by calling ``dos_like.run_in
 Building
 --------
 
-Building python-dos-like requires C development tools, SDL2_, and GLEW_ to be installed.
+Building python-dos-like requires C development tools to be installed.
+
+On Linux and macOS, the SDL2_ and GLEW_ libraries are required.
 
 If building from a git repository, you must update submodules to get the dos-like source.
 
@@ -83,8 +85,8 @@ If building from a git repository, you must update submodules to get the dos-lik
 Limitations
 -----------
 
-Only building on Linux has been tested.  Building on macOS should work fine.  Windows will
-likely be more difficult.  And WebAssembly should be a real challenge.
+This library has been tested on Linux and Windows.  It builds on macOS, however running in
+the background raises an AppKit assertion.  Building on WebAssembly should be a real challenge.
 
 The lifecycle of graphics, music, and sound loaded from dos-like is not managed, and is
 likely leaking memory.
