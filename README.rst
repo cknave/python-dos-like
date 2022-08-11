@@ -8,6 +8,11 @@ Gustavsson.
 
 Usage
 -----
+
+.. code-block:: bash
+
+  pip install python-dos-like
+
 python-dos-like can be used in the same way as dos-like by calling ``dos_like.start`` on your
 main function:
 
@@ -69,7 +74,7 @@ If building from a git repository, you must update submodules to get the dos-lik
 
 .. code-block:: bash
 
-  $ git submodule update --init --recursive
+  git submodule update --init --recursive
 
 .. code-block:: bash
 
