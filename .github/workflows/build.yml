@@ -1,0 +1,99 @@
+name: Build
+
+on:
+  push:
+    branches-ignore: [ "*" ]
+    tags: [ "*" ]
+
+jobs:
+  sdist:
+    name: source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+      - name: Install Linux dependencies
+        run: |
+          sudo apt-get install libsdl2-dev
+      - name: Build source dist
+        run: |
+          python -m pip install -U pip build
+          python -m build -s
+      - name: Validate version in filename
+        run: |
+          # stop the build if the generated filename doesn't match the tag being built
+          ls dist/python-dos-like-${{ github.ref_name }}.tar.gz
+      - name: Upload source dist
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist/*.tar.gz
+  manylinux:
+    name: manylinux wheels
+    strategy:
+      fail-fast: false
+      matrix:
+        python-tag: ["cp39", "cp310"]
+    runs-on: ubuntu-latest
+    container: quay.io/pypa/manylinux_2_28_x86_64
+    env:
+      python: /opt/python/${{ matrix.python-tag }}-${{ matrix.python-tag }}/bin/python
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Install Linux dependencies
+        run: |
+          yum -y install SDL2-devel glew-devel
+      - name: Install Python dependencies
+        run: |
+          $python -m pip install -U pip wheel
+          $python -m pip install -e '.[dev]'
+      - name: Build package
+        run: |
+          $python -m build -w
+      - name: Repair package
+        run: |
+          auditwheel repair dist/*.whl
+      - name: Upload package
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: wheelhouse/*.whl
+  wheel:
+    name: other wheels
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10"]
+        os: ["macos-latest", "windows-latest"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install macOS dependencies
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew install sdl2 glew
+      - name: Install Python dependencies
+        run: |
+          python -m pip install -U pip wheel
+          python -m pip install -e '.[dev]'
+      - name: Build package
+        run: |
+          python -m build -w
+      - name: Upload package
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist/*.whl
