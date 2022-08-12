@@ -330,7 +330,7 @@ __all__ = [
 # ---------------------------
 
 # Screen buffer size is not exposed by the dos-like API
-SCREEN_BUFFER_SIZE = 640 * 480
+SCREEN_BUFFER_SIZE = 1024 * 1024
 
 MUSIC_CHANNELS = _dos.lib.MUSIC_CHANNELS
 SOUND_CHANNELS = _dos.lib.SOUND_CHANNELS

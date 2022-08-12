@@ -50,7 +50,7 @@ set_source(
 ffibuilder.cdef("""\
     // Define this in python to be called by the C dosmain().
     extern "Python" int _pydosmain(int argc, char **argv);
-    
+
     // dos-like is designed as an executable, so just expose its main function to the API.
     int main(int argc, char **argv);
 
@@ -71,6 +71,8 @@ ffibuilder.cdef("""\
         videomode_640x350,
         videomode_640x400,
         videomode_640x480,
+
+        force_size_videomode = 0x7ffffff // ensure videomode_t is 32-bit value
     };
 
     void setvideomode( enum videomode_t mode );
@@ -82,10 +84,9 @@ ffibuilder.cdef("""\
     void waitvbl( void );
     void setpal( int index, int r, int g, int b );
     void getpal( int index, int* r, int* g, int* b );
-    
+
     int shuttingdown( void );
-    
-    
+
     void cputs( char const* string );
     void textcolor( int color );
     void textbackground( int color );
@@ -95,21 +96,21 @@ ffibuilder.cdef("""\
     void clrscr( void );
     void curson( void );
     void cursoff( void );
-    
+
     unsigned char* loadgif( char const* filename, int* width, int* height, int* palcount, unsigned char palette[ 768 ] );
-    
+
     void blit( int x, int y, unsigned char* source, int width, int height, int srcx, int srcy, int srcw, int srch );
     void maskblit( int x, int y, unsigned char* source, int width, int height, int srcx, int srcy, int srcw, int srch, 
         int colorkey );
-    
+
     void clearscreen( void );
     int getpixel( int x, int y );
     void hline( int x, int y, int len, int color );
     void putpixel( int x, int y, int color );
-    
+
     void setdrawtarget( unsigned char* pixels, int width, int height );
     void resetdrawtarget( void );
-    
+
     void setcolor( int color );
     int getcolor( void );
     void line( int x1, int y1, int x2, int y2 );
@@ -123,35 +124,34 @@ ffibuilder.cdef("""\
     void fillpoly( int* points_xy, int count );
     void floodfill( int x, int y );
     void boundaryfill( int x, int y, int boundary );
-    
+
     void outtextxy( int x, int y, char const* text ); 
     void wraptextxy( int x, int y, char const* text, int width ); 
     void centertextxy( int x, int y, char const* text, int width ); 
-    
+
     enum {
         DEFAULT_FONT_8X8  = 1,
         DEFAULT_FONT_8X16 = 2,
         DEFAULT_FONT_9X16 = 3,
     };
-    
+
     void settextstyle( int font, int bold, int italic, int underline );
     int installuserfont( char const* filename ); 
-    
-    
+
     enum {
         DEFAULT_SOUNDBANK_AWE32 = 1,
         DEFAULT_SOUNDBANK_SB16  = 2,
     };
-    
+
     void setsoundbank( int soundbank );
-    int installusersoundbank( char const* filename );
-    
-    #define MUSIC_CHANNELS 16 
+    int installusersoundbank( char const* filename ); 
+
+    #define MUSIC_CHANNELS 16
     void noteon( int channel, int note, int velocity);
     void noteoff( int channel, int note );
     void allnotesoff( int channel );
     void setinstrument( int channel, int instrument );
-    
+
     struct music_t;
     struct music_t* loadmid( char const* filename );
     struct music_t* loadmus( char const* filename );
@@ -162,7 +162,7 @@ ffibuilder.cdef("""\
     void stopmusic( void );
     int musicplaying( void );
     void musicvolume( int volume );
-    
+
     enum soundmode_t {
         soundmode_8bit_mono_5000,
         soundmode_8bit_mono_8000,
@@ -193,9 +193,9 @@ ffibuilder.cdef("""\
         soundmode_16bit_stereo_32000,
         soundmode_16bit_stereo_44100,
     };
-    
+
     void setsoundmode( enum soundmode_t mode );
-    
+
     #define SOUND_CHANNELS 16
     struct sound_t;
     struct sound_t* loadwav( char const* filename );
@@ -204,7 +204,7 @@ ffibuilder.cdef("""\
     void stopsound( int channel );
     int soundplaying( int channel );
     void soundvolume( int channel, int left, int right );
-    
+
     enum keycode_t { 
         KEY_INVALID, KEY_LBUTTON, KEY_RBUTTON, KEY_CANCEL, KEY_MBUTTON, KEY_XBUTTON1, KEY_XBUTTON2, KEY_BACK, KEY_TAB, 
         KEY_CLEAR, KEY_RETURN, KEY_SHIFT, KEY_CONTROL, KEY_MENU, KEY_PAUSE, KEY_CAPITAL, KEY_KANA, KEY_HANGUL = KEY_KANA,
@@ -226,12 +226,13 @@ ffibuilder.cdef("""\
         KEY_ZOOM, KEY_NONAME, KEY_PA1, KEY_OEM_CLEAR, 
         KEYCOUNT, KEYPADDING = 0xFFFFFFFF 
     };
-    
-    #define KEY_MODIFIER_RELEASED 0x80000000
+
     int keystate( enum keycode_t key );
+
+    #define KEY_MODIFIER_RELEASED 0x80000000 
     enum keycode_t* readkeys( void );
     char const* readchars( void );
-    
+
     int mousex( void );
     int mousey( void );
     int mouserelx( void );
