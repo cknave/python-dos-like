@@ -3,6 +3,9 @@ Python bindings for dos-like
 python-dos-like is a set of Python bindings for the dos-like_ programming library by Mattias
 Gustavsson.
 
+.. image:: https://github.com/cknave/python-dos-like/actions/workflows/testing.yml/badge.svg
+  :target: https://github.com/cknave/python-dos-like/actions/workflows/testing.yml
+
 .. _dos-like: https://mattiasgustavsson.itch.io/dos-like
 
 
