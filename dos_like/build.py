@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import os
 import pathlib
 import platform
 
@@ -6,9 +7,14 @@ import cffi
 
 ffibuilder = cffi.FFI()
 lib_dir = pathlib.Path(__file__).parent / '..' / 'libs' / 'dos-like' / 'source'
-extra_args = []
-# Uncomment if gdb is needed:
-# extra_args=['-g', '-O0'],
+
+# Allow using CFLAGS to set additional compiler flags
+extra_args = os.environ.get('CFLAGS', '').split()
+
+# Use the ALWAYS_UPDATE flag by default, but allow it to be overridden
+defines = [('NO_MAIN_DEF', '1')]
+if bool(int(os.environ.get('ALWAYS_UPDATE', '1'))):
+    defines.append(('ALWAYS_UPDATE', '1'))
 
 # Linking OpenGL is different on macOS
 if platform.system() == 'Darwin':
@@ -45,7 +51,7 @@ set_source(
     """,
     include_dirs=[lib_dir],
     extra_compile_args=extra_args + platform_frameworks,
-    define_macros=[('NO_MAIN_DEF', '1')],
+    define_macros=defines,
 )
 ffibuilder.cdef("""\
     // Define this in python to be called by the C dosmain().

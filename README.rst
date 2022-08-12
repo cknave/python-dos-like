@@ -54,14 +54,6 @@ You can also use python-dos-like in the Python REPL by calling ``dos_like.run_in
   run in windowed mode.  Without it, dos-like starts in full screen and you have to press
   F11 to enter windowed mode.
 
-.. warning::
-
-  The current version of dos-like does not update the screen while its window is out of focus.
-  Since this is inconvenient for experimentation, you can build your own version of dos-like
-  where you modify the `app_has_focus function`_ to always return true.
-
-.. _app_has_focus function: https://github.com/mattiasgustavsson/dos-like/blob/e0e279f2d8b117e128fe9c20b19edb3fbc6f8375/source/dos.h#L3652-L3654
-
 
 Building
 --------
@@ -82,6 +74,20 @@ If building from a git repository, you must update submodules to get the dos-lik
   $ . .venv/bin/activate
   (.venv) $ pip install -e '.[dev]'
   (.venv) $ coverage run -m unittest && coverage report
+
+Several environment variables may be set to control compile-time options:
+
++----------------------+---------+---------------------------------------------------------------+
+| Environment variable | Default | Description                                                   |
++======================+=========+===============================================================+
+| ``ALWAYS_UPDATE``    | 1       | Update the screen in the background.  Set this to ``0`` to    |
+|                      |         | restore dos-like's default behavior of pausing updates when   |
+|                      |         | the window loses focus.                                       |
++----------------------+---------+---------------------------------------------------------------+
+| ``CFLAGS``           |         | Extra compiler flags.  Of note, ``-DNULL_PLATFORM`` is useful |
+|                      |         | to build a library for headless build servers.                |
++----------------------+---------+---------------------------------------------------------------+
+
 
 .. _SDL2: https://www.libsdl.org/download-2.0.php
 .. _GLEW: http://glew.sourceforge.net/
