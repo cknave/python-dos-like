@@ -19,3 +19,7 @@ python:
       path: .
       extra_requirements:
         - dev
+
+# Clone all submodules
+submodules:
+  include: all
