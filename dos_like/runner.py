@@ -19,7 +19,7 @@ _raised_exception: Exception | None = None
 
 
 @_dos.ffi.def_extern()
-def _pydosmain(_: int, __: list[str]):
+def _pydosmain(_: int, __: list[str]) -> int:
     """Called by C function dosmain()."""
     try:
         return _main_fn() or 0
@@ -30,6 +30,16 @@ def _pydosmain(_: int, __: list[str]):
 
 
 def start(main_fn: MainFunc, argv: list[str] = None) -> int:
+    """Start dos-like with a given main function, blocking until it returns.
+
+    :param main_fn: Run this function in dos-like.  Inside this function,
+        :mod:`dos_like.dos` functions may be called.
+    :param argv: optional arguments to pass to dos-like.  Notably, ``-w``
+        starts in windowed mode.
+    :return: value returned by **main_fn**
+    :raises RuntimeError: if already running
+
+    """
     global _main_fn
     global _raised_exception
 
@@ -69,7 +79,15 @@ class BackgroundThread(threading.Thread):
         self.stop.wait()
 
 
-def run_in_background(argv: list[str] = None):
+def run_in_background(argv: list[str] = None) -> None:
+    """Start dos-like in a background thread and return immediately.
+
+    :param argv: optional arguments to pass to dos-like.  Notably, ``-w``
+        starts in windowed mode.
+
+    Once returned, :mod:`dos_like.dos` functions may be called.
+
+    """
     global _bg_thread
 
     if _bg_thread:
@@ -82,7 +100,12 @@ def run_in_background(argv: list[str] = None):
     _bg_thread = thread
 
 
-def stop():
+def stop() -> None:
+    """Stop running the background thread started by :func:`run_in_background`.
+
+    :raises RuntimeError: if not running in the background
+
+    """
     global _bg_thread
 
     if not _bg_thread:
