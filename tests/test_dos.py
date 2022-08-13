@@ -105,7 +105,6 @@ class DosAPITests(unittest.TestCase):
     def test_loadgif(self):
         gif_path = pathlib.Path(__file__).parent / 'data' / 'test.gif'
         gif = dos.loadgif(gif_path)
-        self.assertIsNotNone(gif)
         self.assertEqual('test.gif', gif.filename)
         self.assertEqual(3, gif.width)
         self.assertEqual(2, gif.height)
@@ -121,9 +120,9 @@ class DosAPITests(unittest.TestCase):
             dos.RGB(0, 0, 0),
         ], gif.palette)
 
-    def test_loadgif_returns_none_for_nonexistent_path(self):
-        result = dos.loadgif(str(uuid.uuid4()))
-        self.assertIsNone(result)
+    def test_loadgif_raises_value_error_for_nonexistent_path(self):
+        with self.assertRaises(ValueError):
+            dos.loadgif(str(uuid.uuid4()))
 
     def test_blit(self):
         pixels = dos.new_buffer(b'\x01\x02\x03'
@@ -516,17 +515,16 @@ class DosAPITests(unittest.TestCase):
                                  ('test.opb', dos.loadopb)]:
             path = pathlib.Path(__file__).parent / 'data' / filename
             music = loader(path)
-            self.assertIsNotNone(music, f'for {loader.__name__}("{path}")')
             self.assertEqual(filename, music.filename)
             dos.playmusic(music)
             self.assertTrue(dos.musicplaying(), f'for {path}')
             dos.stopmusic()
             self.assertFalse(dos.musicplaying(), f'for {path}')
 
-    def test_loadmid_nonexistent_music_paths_returns_none(self):
+    def test_load_nonexistent_music_paths_raises_value_error(self):
         for loader in dos.loadmid, dos.loadmus, dos.loadmod, dos.loadopb:
-            result = loader(str(uuid.uuid4()))
-            self.assertIsNone(result, f'for {loader.__name__}')
+            with self.assertRaises(ValueError, msg=f'for {loader.__name__}'):
+                loader(str(uuid.uuid4()))
 
     def test_musicvolume(self):
         dos.musicvolume(255)
@@ -536,28 +534,28 @@ class DosAPITests(unittest.TestCase):
         with open(path, 'rb') as f:
             mus_data = f.read()
         music = dos.createmus(mus_data)
-        self.assertIsNotNone(music)
         self.assertIsNone(music.filename)
         dos.playmusic(music)
         self.assertTrue(dos.musicplaying())
         dos.stopmusic()
         self.assertFalse(dos.musicplaying())
 
-    def test_createmus_with_garbage_data_returns_none(self):
+    def test_createmus_with_garbage_data_raises_value_error(self):
         data = dos.new_buffer(b'\x00')
-        self.assertIsNone(dos.createmus(data))
+        with self.assertRaises(ValueError):
+            dos.createmus(data)
 
     def test_load_and_play_wav(self):
         wav_path = pathlib.Path(__file__).parent / 'data' / 'test.wav'
         sound = dos.loadwav(wav_path)
-        self.assertIsNotNone(sound)
         dos.playsound(0, sound)
         self.assertTrue(dos.soundplaying(0))
         dos.stopsound(0)
         self.assertFalse(dos.soundplaying(0))
 
-    def test_load_nonexistent_wav_returns_none(self):
-        self.assertIsNone(dos.loadwav(str(uuid.uuid4())))
+    def test_load_nonexistent_wav_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            dos.loadwav(str(uuid.uuid4()))
 
     def test_createsound(self):
         sample_rate = 8000
@@ -578,7 +576,6 @@ class DosAPITests(unittest.TestCase):
 
         for samples in samples_ints, samples_buffer:
             sound = dos.createsound(channels, sample_rate, samples)
-            self.assertIsNotNone(sound, f'for samples {type(samples)}')
             dos.playsound(0, sound)
             self.assertTrue(dos.soundplaying(0),
                             f'for samples {type(samples)}')
@@ -586,9 +583,9 @@ class DosAPITests(unittest.TestCase):
             self.assertFalse(dos.soundplaying(0),
                              f'for samples {type(samples)}')
 
-    def test_createsound_with_garbage_params_returns_none(self):
-        sound = dos.createsound(channels=1000, samplerate=999999, samples=[42])
-        self.assertIsNone(sound)
+    def test_createsound_with_garbage_params_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            dos.createsound(channels=1000, samplerate=999999, samples=[42])
 
     def test_mouse_coords(self):
         # Not much to test here

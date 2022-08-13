@@ -101,3 +101,8 @@ Limitations
 
 This library has been tested on Linux and Windows.  It builds on macOS, however running in
 the background raises an AppKit assertion.  Building on WebAssembly should be a real challenge.
+
+Memory allocated by dos-like will be freed when its corresponding bython buffer object is
+garbage collected.  The current draw target and music will be retained even if no other python
+code has a reference, but any playing sounds will not be.  Deleting or releasing the last
+reference to a playing sound may cause issues.

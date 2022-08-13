@@ -1,48 +1,108 @@
 Reference
 =========
 
+.. role:: underline
+    :class: underline
+
 Running dos-like
 ----------------
 .. automodule:: dos_like
   :members: start, run_in_background, stop
 
 
-dos-like API
-------------
+The dos-like API
+----------------
 .. automodule:: dos_like.dos
 
 Screen functions
 ~~~~~~~~~~~~~~~~
-.. autofunction:: getpal
-.. autofunction:: screenbuffer
-.. autofunction:: screenheight
-.. autofunction:: screenwidth
-.. autofunction:: setdoublebuffer
-.. autofunction:: setpal
-.. autofunction:: setvideomode
-.. autofunction:: shuttingdown
-.. autofunction:: swapbuffers
-.. autofunction:: waitvbl
+.. autofunction:: dos_like.dos.getpal
+.. autofunction:: dos_like.dos.screenbuffer
+.. autofunction:: dos_like.dos.screenheight
+.. autofunction:: dos_like.dos.screenwidth
+.. autofunction:: dos_like.dos.setdoublebuffer
+.. autofunction:: dos_like.dos.setpal
+.. autofunction:: dos_like.dos.setvideomode
+.. autofunction:: dos_like.dos.shuttingdown
+.. autofunction:: dos_like.dos.swapbuffers
+.. autofunction:: dos_like.dos.waitvbl
 
 Text mode functions
 ~~~~~~~~~~~~~~~~~~~
-.. autofunction:: clrscr
-.. autofunction:: cputs
-.. autofunction:: cursoff
-.. autofunction:: curson
-.. autofunction:: gotoxy
-.. autofunction:: textbackground
-.. autofunction:: textcolor
-.. autofunction:: wherex
-.. autofunction:: wherey
-
+.. autofunction:: dos_like.dos.clrscr
+.. autofunction:: dos_like.dos.cputs
+.. autofunction:: dos_like.dos.cursoff
+.. autofunction:: dos_like.dos.curson
+.. autofunction:: dos_like.dos.gotoxy
+.. autofunction:: dos_like.dos.textbackground
+.. autofunction:: dos_like.dos.textcolor
+.. autofunction:: dos_like.dos.wherex
+.. autofunction:: dos_like.dos.wherey
 
 Graphics mode functions
 ~~~~~~~~~~~~~~~~~~~~~~~
-.. autofunction:: blit
-.. autofunction:: maskblit
-.. autofunction:: loadgif
-TODO: clearscreen
+.. autofunction:: dos_like.dos.bar
+.. autofunction:: dos_like.dos.blit
+.. autofunction:: dos_like.dos.boundaryfill
+.. autofunction:: dos_like.dos.centertextxy
+.. autofunction:: dos_like.dos.circle
+.. autofunction:: dos_like.dos.clearscreen
+.. autofunction:: dos_like.dos.drawpoly
+.. autofunction:: dos_like.dos.ellipse
+.. autofunction:: dos_like.dos.fillcircle
+.. autofunction:: dos_like.dos.fillellipse
+.. autofunction:: dos_like.dos.fillpoly
+.. autofunction:: dos_like.dos.floodfill
+.. autofunction:: dos_like.dos.getcolor
+.. autofunction:: dos_like.dos.hline
+.. autofunction:: dos_like.dos.installuserfont
+.. autofunction:: dos_like.dos.line
+.. autofunction:: dos_like.dos.loadgif
+.. autofunction:: dos_like.dos.maskblit
+.. autofunction:: dos_like.dos.outtextxy
+.. autofunction:: dos_like.dos.putpixel
+.. autofunction:: dos_like.dos.rectangle
+.. autofunction:: dos_like.dos.resetdrawtarget
+.. autofunction:: dos_like.dos.setcolor
+.. autofunction:: dos_like.dos.setdrawtarget
+.. autofunction:: dos_like.dos.settextstyle
+.. autofunction:: dos_like.dos.wraptextxy
+
+Audio functions
+~~~~~~~~~~~~~~~
+.. autofunction:: dos_like.dos.allnotesoff
+.. autofunction:: dos_like.dos.createmus
+.. autofunction:: dos_like.dos.createsound
+.. autofunction:: dos_like.dos.installusersoundbank
+.. autofunction:: dos_like.dos.loadmid
+.. autofunction:: dos_like.dos.loadmod
+.. autofunction:: dos_like.dos.loadmus
+.. autofunction:: dos_like.dos.loadopb
+.. autofunction:: dos_like.dos.loadwav
+.. autofunction:: dos_like.dos.musicplaying
+.. autofunction:: dos_like.dos.musicvolume
+.. autofunction:: dos_like.dos.noteoff
+.. autofunction:: dos_like.dos.noteon
+.. autofunction:: dos_like.dos.playmusic
+.. autofunction:: dos_like.dos.playsound
+.. autofunction:: dos_like.dos.setinstrument
+.. autofunction:: dos_like.dos.setsoundbank
+.. autofunction:: dos_like.dos.setsoundmode
+.. autofunction:: dos_like.dos.soundplaying
+.. autofunction:: dos_like.dos.soundvolume
+.. autofunction:: dos_like.dos.stopmusic
+.. autofunction:: dos_like.dos.stopsound
+
+Input functions
+~~~~~~~~~~~~~~~
+.. autofunction:: dos_like.dos.keystate
+.. autofunction:: dos_like.dos.mouserelx
+.. autofunction:: dos_like.dos.mouserely
+.. autofunction:: dos_like.dos.mousex
+.. autofunction:: dos_like.dos.mousey
+.. autofunction:: dos_like.dos.readchars
+.. autofunction:: dos_like.dos.readkeys
+
 
 Utilities
 ---------
@@ -58,9 +118,16 @@ Types
   :members: filename
 .. autoclass:: dos_like.dos.RGB
   :members: r, g, b
+  :member-order: bysource
 .. autoclass:: dos_like.dos.Sound
   :members: filename
 
+
+Constants
+---------
+
+.. autodata:: dos_like.dos.MUSIC_CHANNELS
+.. autodata:: dos_like.dos.SOUND_CHANNELS
 
 
 Video Modes

@@ -197,6 +197,7 @@ __all__ = [
     'KEY_Y',
     'KEY_Z',
     'KEY_ZOOM',
+    'MUSIC_CHANNELS',
     'Points',
     'RGB',
     'SOUND_CHANNELS',
@@ -333,7 +334,10 @@ __all__ = [
 SCREEN_BUFFER_SIZE = 1024 * 1024
 
 MUSIC_CHANNELS = _dos.lib.MUSIC_CHANNELS
+"""Maximum number of channels for music notes."""
+
 SOUND_CHANNELS = _dos.lib.SOUND_CHANNELS
+"""Maximum number of channels for sounds."""
 
 # The buffer protocol cannot be referenced by python code,
 # so expose cffi's concrete buffer (see PEP 688)
@@ -349,6 +353,10 @@ Points: TypeAlias = Union[buffer, list[int], list[tuple[int, int]]]
 
 # Reference to the current music to prevent it from being garbage collected
 _current_music: Music | None = None
+
+# Reference to the current draw target to prevent it from being garbage
+# collected
+_current_draw_target: buffer | None = None
 
 
 def _data_for_points(points: Points) -> _dos.ffi.CData:
@@ -586,10 +594,10 @@ KeyCode = int_with_flags.IntWithFlags(
 KeyCode._flags_ = {'KEY_MODIFIER_RELEASED': _dos.lib.KEY_MODIFIER_RELEASED}
 KeyCode.__doc__ = """\
     Keyboard code.
-    
+
     May be bitwise or'd with :data:`KEY_MODIFIER_RELEASED` to indicate a key has been
     released.  Otherwise indicates a key has been pressed.
-    
+
     """
 # TODO: these all need docstrings
 KEY_INVALID: KeyCode = getattr(KeyCode, 'INVALID')
@@ -778,8 +786,9 @@ KEY_MODIFIER_RELEASED.__doc__ = \
 def new_buffer(data: bytes = None, size: int = None) -> buffer:
     """Allocate a new buffer to pass to dos-like functions that accept one.
 
-    :param data: data to fill the buffer with, or use ``None`` and **size**
-    :param size: if data is ``None``, allocate a buffer of this size in bytes
+    :param data: data to fill the buffer with, or use :obj:`None` and **size**
+    :param size: if data is :obj:`None`, allocate a buffer of this size in
+        bytes
     :return: new :class:`buffer`
 
     """
@@ -815,7 +824,8 @@ def get_filename(path: bytes | str | os.PathLike | None) -> str | None:
     """Get the filename part of a path.
 
     :param path: string-like type containing a filesystem path
-    :return: filename from that path, or ``None`` if the path was ``None``
+    :return: filename from that path, or :obj:`None` if the path was
+        :obj:`None`
 
     """
     if path is None:
@@ -972,7 +982,7 @@ def cputs(string: bytes | str | os.PathLike) -> None:
 def textcolor(color: int) -> None:
     """Change the text color (text mode only).
 
-    :param color: text color in 0..15
+    :param color: text palette index in 0..15
 
     """
     _dos.lib.textcolor(color)
@@ -981,7 +991,7 @@ def textcolor(color: int) -> None:
 def textbackground(color: int) -> None:
     """Change the text background color (text mode only).
 
-    :param color: background color in 0..15
+    :param color: background palette index in 0..15
 
     """
     _dos.lib.textbackground(color)
@@ -990,26 +1000,26 @@ def textbackground(color: int) -> None:
 def gotoxy(x: int, y: int) -> None:
     """Set the cursor position (text mode only).
 
-    :param x: cursor x-position, starting at 0
-    :param y: cursor y-position, starting at 0
+    :param x: cursor 𝑥 position, starting at 0
+    :param y: cursor 𝑦 position, starting at 0
 
     """
     _dos.lib.gotoxy(x, y)
 
 
 def wherex() -> int:
-    """Return the current cursor x-position.
+    """Return the current cursor 𝑥 position.
 
-    :return: cursor x-position
+    :return: cursor 𝑥 position
 
     """
     return _dos.lib.wherex()
 
 
 def wherey() -> int:
-    """Return the current cursor y-position.
+    """Return the current cursor 𝑦 position.
 
-    :return: cursor y-position
+    :return: cursor 𝑦 position
 
     """
     return _dos.lib.wherey()
@@ -1019,7 +1029,7 @@ def clrscr() -> None:
     """Clear the screen (text mode only).
 
     Fill the screen with the space character (``b'\\x20'``) with the current text
-    color.
+    and background color.
 
     For graphics mode, see :func:`clearscreen`.
 
@@ -1037,11 +1047,12 @@ def cursoff() -> None:
     _dos.lib.cursoff()
 
 
-def loadgif(filename: bytes | str | os.PathLike) -> GIF | None:
+def loadgif(filename: bytes | str | os.PathLike) -> GIF:
     """Load a GIF image.
 
     :param filename: path to the GIF file
-    :return: :class:`GIF` image or ``None`` if failed to load
+    :return: :class:`GIF` image
+    :raises ValueError: if unable to load image
 
     """
     width_ptr = _dos.ffi.new('int *')
@@ -1052,7 +1063,7 @@ def loadgif(filename: bytes | str | os.PathLike) -> GIF | None:
                               palcount_ptr, palette)
 
     if pixels == _dos.ffi.NULL:
-        return None
+        raise ValueError(f'Unable to load GIF {filename}')
     width = width_ptr[0]
     height = height_ptr[0]
     palcount = palcount_ptr[0]
@@ -1079,13 +1090,13 @@ def blit(
 ) -> None:
     """Copy an image buffer to the screen.
 
-    :param x: destination x-position
-    :param y: destination y-position
+    :param x: destination 𝑥 position
+    :param y: destination 𝑦 position
     :param source: source image buffer, e.g. :attr:`GIF.pixels`
     :param width: source image width
     :param height: source image height
-    :param srcx: source x-position in the image
-    :param srcy: source y-position in the image
+    :param srcx: source 𝑥 position in the image
+    :param srcy: source 𝑦 position in the image
     :param srcw: width to copy
     :param srch: height to copy
 
@@ -1108,13 +1119,13 @@ def maskblit(
 ) -> None:
     """Copy an image buffer to the screen using 1 color as transparent.
 
-    :param x: destination x-position
-    :param y: destination y-position
+    :param x: destination 𝑥 position
+    :param y: destination 𝑦 position
     :param source: source image buffer, e.g. :attr:`GIF.pixels`
     :param width: source image width
     :param height: source image height
-    :param srcx: source x-position in the image
-    :param srcy: source y-position in the image
+    :param srcx: source 𝑥 position in the image
+    :param srcy: source 𝑦 position in the image
     :param srcw: width to copy
     :param srch: height to copy
     :param colorkey: palette index to use as transparent
@@ -1125,99 +1136,302 @@ def maskblit(
 
 
 def clearscreen() -> None:
+    """Fill the screen buffer with 0s."""
     _dos.lib.clearscreen()
 
 
 def getpixel(x: int, y: int) -> int:
+    """Return the pixel value at this position
+
+    :param x: screen 𝑥 position
+    :param y: screen 𝑦 position
+    :return: pixel value
+
+    """
     return _dos.lib.getpixel(x, y)
 
 
 def hline(x: int, y: int, len: int, color: int) -> None:
+    """Draw a horizontal line from left to right.
+
+    :param x: starting 𝑥 position
+    :param y: starting 𝑦 position
+    :param len: total length in pixels
+    :param color: palette index
+
+    """
     _dos.lib.hline(x, y, len, color)
 
 
 def putpixel(x: int, y: int, color: int) -> None:
+    """Set the pixel value at this position.
+
+    :param x: screen 𝑥 position
+    :param y: screen 𝑦 position
+    :param color: palette index
+
+    """
     _dos.lib.putpixel(x, y, color)
 
 
 def setdrawtarget(pixels: buffer, width: int, height: int) -> None:
+    """Start drawing to an off-screen buffer.
+
+    :param pixels: pixel buffer to draw to
+    :param width: width of the pixel buffer
+    :param height: height of the pixel buffer
+
+    Future draw calls will update **pixels** instead of the screen buffer.  To
+    resume drawing to the screen, call :func:`resetdrawtarget`.
+
+    """
+    global _current_draw_target
     size = width * height
     if len(pixels) < size:
         raise ValueError(f'pixel buffer must be at least {size} bytes')
     _dos.lib.setdrawtarget(_dos.ffi.from_buffer(pixels), width, height)
+    # Retain the draw target to prevent it from being garbage collected
+    _current_draw_target = pixels
 
 
 def resetdrawtarget() -> None:
+    """Start drawing to the screen buffer.
+
+    Call this to stop drawing to the off-screen buffer set by
+    :func:`setdrawtarget`.
+
+    """
+    global _current_draw_target
     _dos.lib.resetdrawtarget()
+    _current_draw_target = None
 
 
 def setcolor(color: int) -> None:
+    """Set the palette index for drawing functions that don't take a color
+    (e.g. :func:`circle`).
+
+    :param color: palette index
+
+    """
     _dos.lib.setcolor(color)
 
 
 def getcolor() -> int:
+    """Get the palette index set by :func:`setcolor`.
+
+    :return: palette index
+
+    """
     return _dos.lib.getcolor()
 
 
 def line(x1: int, y1: int, x2: int, y2: int) -> None:
+    """Draw a line between two points.
+
+    :param x1: 𝑥 position of point 1
+    :param y1: 𝑦 position of point 1
+    :param x2: 𝑥 position of point 2
+    :param y2: 𝑦 position of point 2
+
+    The palette index set by :func:`setcolor` will be used.
+
+    """
     _dos.lib.line(x1, y1, x2, y2)
 
 
 def rectangle(x: int, y: int, w: int, h: int) -> None:
+    """Draw a rectangle outline.
+
+    :param x: 𝑥 position of the top-left corner
+    :param y: 𝑦 position of the top-left corner
+    :param w: rectangle width
+    :param h: rectangle height
+
+    The palette index set by :func:`setcolor` will be used.
+
+    """
     _dos.lib.rectangle(x, y, w, h)
 
 
 def bar(x: int, y: int, w: int, h: int) -> None:
+    """Draw a filled rectangle.
+
+    :param x: 𝑥 position of the top-left corner
+    :param y: 𝑦 position of the top-left corner
+    :param w: rectangle width
+    :param h: rectangle height
+
+    The palette index set by :func:`setcolor` will be used.
+
+    """
     _dos.lib.bar(x, y, w, h)
 
 
 def circle(x: int, y: int, r: int) -> None:
+    """Draw a circle outline.
+
+    :param x: 𝑥 position of the circle's center
+    :param y: 𝑦 position of the circle's center
+    :param r: circle radius
+
+    The palette index set by :func:`setcolor` will be used.
+
+    """
     _dos.lib.circle(x, y, r)
 
 
 def fillcircle(x: int, y: int, r: int) -> None:
+    """Draw a filled circle.
+
+    :param x: 𝑥 position of the circle's center
+    :param y: 𝑦 position of the circle's center
+    :param r: circle radius
+
+    The palette index set by :func:`setcolor` will be used.
+
+    """
     _dos.lib.fillcircle(x, y, r)
 
 
 def ellipse(x: int, y: int, rx: int, ry: int) -> None:
+    """Draw an ellipse outline.
+
+    :param x: 𝑥 position of the ellipse's center
+    :param y: 𝑦 position of the ellipse's center
+    :param rx: 𝑥 radius
+    :param ry: 𝑦 radius
+
+    The palette index set by :func:`setcolor` will be used.
+
+    """
     _dos.lib.ellipse(x, y, rx, ry)
 
 
 def fillellipse(x: int, y: int, rx: int, ry: int) -> None:
+    """Draw a filled ellipse.
+
+    :param x: 𝑥 position of the ellipse's center
+    :param y: 𝑦 position of the ellipse's center
+    :param rx: 𝑥 radius
+    :param ry: 𝑦 radius
+
+    The palette index set by :func:`setcolor` will be used.
+
+    """
     _dos.lib.fillellipse(x, y, rx, ry)
 
 
 def drawpoly(points_xy: Points) -> None:
+    """Draw a polygon outline.
+
+    :param points_xy: The points to draw, in one of these formats:
+
+        * a list of 𝑥, 𝑦 tuples: ``[(x1, y1), (x2, y2), ...]``
+        * a flattened list of points: ``[x1, y1, x2, y2, ...]``
+        * an ``int[]`` :obj:`buffer`
+
+    The palette index set by :func:`setcolor` will be used.
+
+    """
     points_data = _data_for_points(points_xy)
     count = len(points_data) // 2
     _dos.lib.drawpoly(points_data, count)
 
 
 def fillpoly(points_xy: Points) -> None:
+    """Draw a filled polygon.
+
+    :param points_xy: The points to draw, in one of these formats:
+
+        * a list of 𝑥, 𝑦 tuples: ``[(x1, y1), (x2, y2), ...]``
+        * a flattened list of points: ``[x1, y1, x2, y2, ...]``
+        * an ``int[]`` :obj:`buffer`
+
+    The palette index set by :func:`setcolor` will be used.
+
+    """
     points_data = _data_for_points(points_xy)
     count = len(points_data) // 2
     _dos.lib.fillpoly(points_data, count)
 
 
 def floodfill(x: int, y: int) -> None:
+    """Flood fill starting at this point.
+
+    :param x: 𝑥 position of the start point
+    :param y: 𝑦 position of the start point
+
+    Fill out from the start point, setting all pixels with a color index
+    matching the original color of the start point.
+
+    The palette index set by :func:`setcolor` will be used.
+
+    """
     _dos.lib.floodfill(x, y)
 
 
 def boundaryfill(x: int, y: int, boundary: int) -> None:
+    """Boundary fill starting at this point.
+
+    :param x: 𝑥 position of the start point
+    :param y: 𝑦 position of the start point
+    :param boundary: boundary color index
+
+    Fill out from the start point, setting all pixels with a color index
+    not matching the boundary color.
+
+    The palette index set by :func:`setcolor` will be used.
+
+    """
     _dos.lib.boundaryfill(x, y, boundary)
 
 
 def outtextxy(x: int, y: int, text: bytes | str | os.PathLike) -> None:
+    """Draw graphics mode text.
+
+    :param x: 𝑥 position of the start point
+    :param y: 𝑦 position of the start point
+    :param text: text to draw
+
+    The font set by :func:`settextstyle` will be used.
+
+    For text mode, see :func:`cputs`.
+
+    """
     _dos.lib.outtextxy(x, y, c_string(text, encoding=cp437.ENCODING))
 
 
 def wraptextxy(x: int, y: int, text: bytes | str | os.PathLike,
                width: int) -> None:
+    """Draw graphics mode text with word wrap.
+
+    :param x: 𝑥 position of the start point
+    :param y: 𝑦 position of the start point
+    :param text: text to draw
+    :param width: wrap to the next line beyond this width
+
+    The font set by :func:`settextstyle` will be used.
+
+    For text mode, see :func:`cputs`.
+
+    """
     _dos.lib.wraptextxy(x, y, c_string(text, encoding=cp437.ENCODING), width)
 
 
 def centertextxy(x: int, y: int, text: bytes | str | os.PathLike,
                  width: int) -> None:
+    """Draw graphics mode text centered between a start point and width.
+
+    :param x: 𝑥 position of the start point
+    :param y: 𝑦 position of the start point
+    :param text: text to draw
+    :param width: centering end point (between 𝑥 and 𝑥 + **width**)
+
+    The font set by :func:`settextstyle` will be used.
+
+    For text mode, see :func:`cputs`.
+
+    """
     _dos.lib.centertextxy(x, y, c_string(text, encoding=cp437.ENCODING), width)
 
 
@@ -1225,10 +1439,28 @@ def settextstyle(font: FontHandle,
                  bold: bool = False,
                  italic: bool = False,
                  underline: bool = False) -> None:
+    """Set the graphics mode text style.
+
+    :param font: font to draw with
+    :param bold: enable **bold**
+    :param italic: enable *italics*
+    :param underline: enable :underline:`underline`
+
+    This will affect the next calls to :func:`outtextxy`, :func:`wraptextxy`,
+    and :func:`centertextxy`.
+
+    """
     _dos.lib.settextstyle(font, bold, italic, underline)
 
 
 def installuserfont(filename: bytes | str | os.PathLike) -> FontHandle:
+    """Install a font generated by the pixelfont library used by dos-like.
+
+    :param filename: filesystem path of the font to load
+    :return: handle to the installed font
+    :raises ValueError: if unable to load the font
+
+    """
     result: int = _dos.lib.installuserfont(c_string(filename))
     if result == 0:
         raise ValueError(f'Failed to load font {filename}')
@@ -1236,11 +1468,26 @@ def installuserfont(filename: bytes | str | os.PathLike) -> FontHandle:
 
 
 def setsoundbank(soundbank: SoundBankHandle) -> None:
+    """Set the current sound bank.
+
+    :param soundbank: handle to an installed sound bank
+
+    The sound bank will be used by music functions like :func:`noteon` and
+    :func:`playmusic`.
+
+    """
     _dos.lib.setsoundbank(soundbank)
 
 
 def installusersoundbank(
         filename: bytes | str | os.PathLike) -> SoundBankHandle:
+    """Install a sound bank.
+
+    :param filename: filesystem path to a SoundFont (.sf2) or OP2 bank (.op2)
+    :return: handle to the new sound bank
+    :raises ValueError: if unable to load the sound bank
+
+    """
     result: int = _dos.lib.installuserfont(c_string(filename))
     if result == 0:
         raise ValueError(f'Failed to load soundbank {filename}')
@@ -1248,57 +1495,147 @@ def installusersoundbank(
 
 
 def noteon(channel: int, note: int, velocity: int) -> None:
+    """Play a note on a music channel.
+
+    :param channel: music channel number from 0 up to but not including
+        :data:`MUSIC_CHANNELS`
+    :param note: MIDI note number in 0..127
+    :param velocity: note velocity in 0..127
+
+    If invalid parameters are given, the function call will be ignored.
+
+    For a chart of MIDI note numbers, see
+    http://www.phys.unsw.edu.au/jw/notes.html
+
+    """
     _dos.lib.noteon(channel, note, velocity)
 
 
 def noteoff(channel: int, note: int) -> None:
+    """Stop playing a note on a music channel.
+
+    :param channel: music channel number from 0 up to but not including
+        :data:`MUSIC_CHANNELS`
+    :param note: MIDI note number in 0..127
+
+    If invalid parameters are given, the function call will be ignored.
+
+    For a chart of MIDI note numbers, see
+    http://www.phys.unsw.edu.au/jw/notes.html
+
+    """
     _dos.lib.noteoff(channel, note)
 
 
 def allnotesoff(channel: int) -> None:
+    """Stop playing all notes on a music channel.
+
+    :param channel: music channel number from 0 up to but not including
+        :data:`MUSIC_CHANNELS`
+
+    """
     _dos.lib.allnotesoff(channel)
 
 
 def setinstrument(channel: int, instrument: int) -> None:
+    """Set the instrument number for a music channel.
+
+    :param channel: music channel number from 0 up to but not including
+        :data:`MUSIC_CHANNELS`
+    :param instrument: instrument number in 0..127
+
+    """
     _dos.lib.setinstrument(channel, instrument)
 
 
-def loadmid(filename: bytes | str | os.PathLike) -> Music | None:
+def loadmid(filename: bytes | str | os.PathLike) -> Music:
+    """Load music from a MIDI (.mid) file.
+
+    :param filename: filesystem path of the MIDI to load
+    :return: loaded MIDI music
+    :raises ValueError: if unable to load the music file
+
+    """
     result = _dos.lib.loadmid(c_string(filename))
     if result == _dos.ffi.NULL:
-        return None
+        raise ValueError(f'Failed to load music {filename}')
     return Music(get_filename(filename), result)
 
 
-def loadmus(filename: bytes | str | os.PathLike) -> Music | None:
+def loadmus(filename: bytes | str | os.PathLike) -> Music:
+    """Load music from a
+    `MUS <https://moddingwiki.shikadi.net/wiki/MUS_Format>`_ (.mus) file.
+
+    :param filename: filesystem path of the MUS to load
+    :return: loaded MUS music
+    :raises ValueError: if unable to load the music file
+
+    """
     result = _dos.lib.loadmus(c_string(filename))
     if result == _dos.ffi.NULL:
-        return None
+        raise ValueError(f'Failed to load music {filename}')
     return Music(get_filename(filename), result)
 
 
-def loadmod(filename: bytes | str | os.PathLike) -> Music | None:
+def loadmod(filename: bytes | str | os.PathLike) -> Music:
+    """Load music from a
+    `module <https://en.wikipedia.org/wiki/MOD_(file_format)>`_ (.mod) file.
+
+    :param filename: filesystem path of the MOD to load
+    :return: loaded MOD music
+    :raises ValueError: if unable to load the music file
+
+    """
     result = _dos.lib.loadmod(c_string(filename))
     if result == _dos.ffi.NULL:
-        return None
+        raise ValueError(f'Failed to load music {filename}')
     return Music(get_filename(filename), result)
 
 
-def loadopb(filename: bytes | str | os.PathLike) -> Music | None:
+def loadopb(filename: bytes | str | os.PathLike) -> Music:
+    """Load music from an
+    `OPBinaryLib <https://github.com/Enichan/OPBinaryLib>`_ (.opb) file.
+
+    :param filename: filesystem path of the OPB to load
+    :return: loaded OPB music
+    :raises ValueError: if unable to load the music file
+
+    """
     result = _dos.lib.loadopb(c_string(filename))
     if result == _dos.ffi.NULL:
-        return None
+        raise ValueError(f'Failed to load music {filename}')
     return Music(get_filename(filename), result)
 
 
-def createmus(data: buffer) -> Music | None:
-    result = _dos.lib.createmus(_dos.ffi.from_buffer(data), len(data))
+def createmus(data: buffer | bytes) -> Music:
+    """Load music from an in-memory
+     `MUS <https://moddingwiki.shikadi.net/wiki/MUS_Format>`_ (.mus) buffer.
+
+    :param data: buffer or byte string containing the MUS data
+    :return: loaded MUS music
+    :raises ValueError: if unable to load the music data
+
+    """
+    if isinstance(data, bytes):
+        c_data = _dos.ffi.new('char[]', data)
+    else:
+        c_data = _dos.ffi.from_buffer(data)
+    result = _dos.lib.createmus(c_data, len(data))
     if result == _dos.ffi.NULL:
-        return None
+        raise ValueError
     return Music(filename=None, _music_ptr=result)
 
 
 def playmusic(music: Music, loop: bool = False, volume: int = 255) -> None:
+    """Start playing music.
+
+    :param music: music to play
+    :param loop: whether the music should loop
+    :param volume: volume level in 0..255
+
+    The music may be stopped with :func:`stopmusic`.
+
+    """
     global _current_music
     _dos.lib.playmusic(music._music_ptr, loop, volume)
     # Prevent current music from being garbage collected
@@ -1306,40 +1643,87 @@ def playmusic(music: Music, loop: bool = False, volume: int = 255) -> None:
 
 
 def stopmusic() -> None:
+    """Stop playing music that was started by :func:`playmusic`."""
     global _current_music
     _dos.lib.stopmusic()
     _current_music = None
 
 
 def musicplaying() -> bool:
+    """Check if music is currently playing.
+
+    :return: :obj:`True` if music is playing, :obj:`False` otherwise
+
+    Music playback can be controlled with :func:`playmusic` and
+    :func:`stopmusic`.
+
+    """
     return bool(_dos.lib.musicplaying())
 
 
 def musicvolume(volume: int) -> None:
+    """Set the music playback volume.
+
+    :param volume: volume level in 0..255
+
+    """
     _dos.lib.musicvolume(volume)
 
 
 def setsoundmode(mode: SoundMode) -> None:
+    """Set the sound playback mode.
+
+    :param mode: new sound mode
+
+    """
     _dos.lib.setsoundmode(mode.value)
 
 
-def loadwav(filename: bytes | str | os.PathLike) -> Sound | None:
+def loadwav(filename: bytes | str | os.PathLike) -> Sound:
+    """Load a .wav sound file.
+
+    :param filename: filesystem path of the WAV to load
+    :return: new sound
+    :raises ValueError: if unable to load the sound
+
+    .. warning::
+
+        Sound memory is freed when the returned :class:`Sound` object is
+        garbage collected.  Deleting or releasing the last reference to a
+        playing sound may cause issues.
+
+    """
     result = _dos.lib.loadwav(c_string(filename))
     if result == _dos.ffi.NULL:
-        return None
+        raise ValueError(f'Unable to load sound {filename}')
     return Sound(get_filename(filename), result)
 
 
-def createsound(
-    channels: int,
-    samplerate: int,
-    samples: Samples,
-) -> Sound | None:
+def createsound(channels: int, samplerate: int, samples: Samples) -> Sound:
+    """Create a sound from a sample buffer.
+
+    :param channels: 1 for mono, 2 for stereo
+    :param samplerate: sample playback rate in 1000..44,100 Hz
+    :param samples: sample buffer in one of these formats:
+
+        * a list of integers in -32,768..32,767
+        * a ``short[]`` buffer
+
+    :return: new sound
+    :raises ValueError: for invalid parameters
+
+    .. warning::
+
+        Sound memory is freed when the returned :class:`Sound` object is
+        garbage collected.  Deleting or releasing the last reference to a
+        playing sound may cause issues.
+
+    """
     data, size = _data_for_samples(samples)
     framecount = size // channels // 2  # 2 bytes per sample
     result = _dos.lib.createsound(channels, samplerate, framecount, data)
     if result == _dos.ffi.NULL:
-        return None
+        raise ValueError('Invalid parameters')
     return Sound(None, result)
 
 
@@ -1347,26 +1731,82 @@ def playsound(channel: int,
               sound: Sound,
               loop: bool = False,
               volume: int = 255) -> None:
+    """Play a sound.
+
+    :param channel: sound channel number from 0 up to but not including
+        :data:`SOUND_CHANNELS`
+    :param sound: sound to play
+    :param loop: whether the sound should loop
+    :param volume: volume level in 0..255
+
+    Sounds may be loaded with :func:`loadwav` or created from a buffer with
+    :func:`createsound`.
+
+    The sound may be stopped with :func:`stopsound`.
+
+    """
     _dos.lib.playsound(channel, sound._sound_ptr, loop, volume)
 
 
 def stopsound(channel: int) -> None:
+    """Stop the sound playing on a channel.
+
+    :param channel: sound channel number from 0 up to but not including
+        :data:`SOUND_CHANNELS`
+
+    This will stop a sound that was played by :func:`playsound`.
+
+    """
     _dos.lib.stopsound(channel)
 
 
 def soundplaying(channel: int) -> bool:
+    """Check if sound is playing on a channel.
+
+    :param channel: sound channel number from 0 up to but not including
+        :data:`SOUND_CHANNELS`
+    :return: :obj:`True` if sound is playing, :obj:`False` otherwise
+
+    Sound can be played with :func:`playsound` and stopped with
+    :func:`stopsound`.
+
+    """
     return bool(_dos.lib.soundplaying(channel))
 
 
 def soundvolume(channel: int, left: int, right: int) -> None:
+    """Set the sound volume for a channel.
+
+    :param channel: sound channel number from 0 up to but not including
+        :data:`SOUND_CHANNELS`
+    :param left: left volume level in 0..255
+    :param right: right volume level in 0..255
+
+    """
     _dos.lib.soundvolume(channel, left, right)
 
 
 def keystate(key: KeyCode) -> bool:
+    """Check if a key is pressed, by code.
+
+    :param key: key code to check
+    :return: :obj:`True` if pressed, :obj:`False` otherwise
+
+    """
     return bool(_dos.lib.keystate(key.value))
 
 
 def readkeys() -> list[KeyCode]:
+    """Get the key codes received since the last call to :func:`readkeys`.
+
+    :return: list of :class:`KeyCode` values, may be empty if no keys were
+        pressed or released since the last call.
+
+    The returned key codes may be bitwise or'd with
+    :data:`KEY_MODIFIER_RELEASED` to indicate a key has been released.
+    Otherwise, indicates a key has been pressed.
+
+    """
     result: list[KeyCode] = []
     keycodes = _dos.lib.readkeys()
     while keycodes[0] != KEY_INVALID.value:
@@ -1376,21 +1816,49 @@ def readkeys() -> list[KeyCode]:
 
 
 def readchars() -> str:
+    """Get the characters typed since the last call to :func:`readchars`.
+
+    :return: string of characters, may be empty if no characters were typed
+        since the last call.
+
+    """
     chars = _dos.lib.readchars()
     return _dos.ffi.string(chars).decode('cp437')
 
 
 def mousex() -> int:
+    """Get the current mouse 𝑥 position.
+
+    :return: mouse 𝑥 position
+
+    """
     return _dos.lib.mousex()
 
 
 def mousey() -> int:
+    """Get the current mouse 𝑦 position.
+
+    :return: mouse 𝑦 position
+
+    """
     return _dos.lib.mousey()
 
 
 def mouserelx() -> int:
+    """Get the last relative mouse 𝑥 direction.
+
+    :return: mouse movement in the 𝑥 direction relative to the position of the
+        last mouse input event, may be positive or negative
+
+    """
     return _dos.lib.mouserelx()
 
 
 def mouserely() -> int:
+    """Get the last relative mouse 𝑦 direction.
+
+    :return: mouse movement in the 𝑦 direction relative to the position of the
+        last mouse input event, may be positive or negative
+
+    """
     return _dos.lib.mouserely()

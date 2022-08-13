@@ -2,7 +2,7 @@ python-dos-like
 ===============
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
    reference

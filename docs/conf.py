@@ -17,13 +17,20 @@ release = importlib.metadata.metadata('python-dos-like')['version']
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx_autodoc_typehints',
+    'sphinx.ext.intersphinx',
+    'sphinx_toolbox.more_autodoc.typehints',
 ]
+
+# Hide "Return type: None" for sphinx_toolbox.more_autodoc.typehints
+hide_none_rtype = True
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+
+# Links to external documentation
+intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
 
 
 # -- Options for HTML output -------------------------------------------------
