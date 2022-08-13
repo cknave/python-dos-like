@@ -101,6 +101,3 @@ Limitations
 
 This library has been tested on Linux and Windows.  It builds on macOS, however running in
 the background raises an AppKit assertion.  Building on WebAssembly should be a real challenge.
-
-The lifecycle of graphics, music, and sound loaded from dos-like is not managed, and is
-likely leaking memory.

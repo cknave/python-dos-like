@@ -343,6 +343,9 @@ RGB = collections.namedtuple('RGB', 'r g b')
 
 Points: TypeAlias = Union[buffer, list[int], list[tuple[int, int]]]
 
+# Reference to the current music to prevent it from being garbage collected
+_current_music: Music | None = None
+
 
 def _data_for_points(points: Points) -> _dos.ffi.CData:
     """Return a CFFI data object for an array of ints representing 2D points.
@@ -390,7 +393,10 @@ class GIF:
     height: int
     palette: list[RGB]
     pixels: buffer
-    # TODO: handle pixels lifecycle
+    _pixels_ptr: _dos.ffi.CData
+
+    def __del__(self):
+        _dos.lib.free(self._pixels_ptr)
 
 
 VideoMode = enum.Enum(
@@ -433,14 +439,13 @@ DEFAULT_SOUNDBANK_SB16: SoundBankHandle = SoundBankHandle(
     _dos.lib.DEFAULT_SOUNDBANK_SB16)
 
 
+@dataclasses.dataclass
 class Music:
+    filename: str | None
+    _music_ptr: _dos.ffi.CData
 
-    def __init__(self,
-                 music_ptr: _dos.ffi.CData,
-                 path: bytes | str | os.PathLike = None):
-        # TODO: handle music lifecycle
-        self._music_ptr = music_ptr
-        self.filename: str = get_filename(path)
+    def __del__(self):
+        _dos.lib.free(self._music_ptr)
 
 
 SoundMode = enum.Enum(
@@ -490,14 +495,13 @@ soundmode_16bit_stereo_44100: SoundMode = getattr(SoundMode,
                                                   '16bit_stereo_44100')
 
 
+@dataclasses.dataclass
 class Sound:
+    filename: str | None
+    _sound_ptr: _dos.ffi.CData
 
-    def __init__(self,
-                 sound_ptr: _dos.ffi.CData,
-                 path: bytes | str | os.PathLike = None):
-        # TODO: handle sound lifecycle
-        self._sound_ptr = sound_ptr
-        self.filename = get_filename(path)
+    def __del__(self):
+        _dos.lib.free(self._sound_ptr)
 
 
 KeyCode = int_with_flags.IntWithFlags(
@@ -833,7 +837,8 @@ def loadgif(filename: bytes | str | os.PathLike) -> GIF | None:
         for i in range(palcount)
     ]
     pixelbuf = _dos.ffi.buffer(pixels, width * height)
-    return GIF(get_filename(filename), width, height, rgb_palette, pixelbuf)
+    return GIF(get_filename(filename), width, height, rgb_palette, pixelbuf,
+               pixels)
 
 
 def blit(
@@ -1008,35 +1013,50 @@ def setinstrument(channel: int, instrument: int) -> None:
 
 def loadmid(filename: bytes | str | os.PathLike) -> Music | None:
     result = _dos.lib.loadmid(c_string(filename))
-    return None if result == _dos.ffi.NULL else Music(result, filename)
+    if result == _dos.ffi.NULL:
+        return None
+    return Music(get_filename(filename), result)
 
 
 def loadmus(filename: bytes | str | os.PathLike) -> Music | None:
     result = _dos.lib.loadmus(c_string(filename))
-    return None if result == _dos.ffi.NULL else Music(result, filename)
+    if result == _dos.ffi.NULL:
+        return None
+    return Music(get_filename(filename), result)
 
 
 def loadmod(filename: bytes | str | os.PathLike) -> Music | None:
     result = _dos.lib.loadmod(c_string(filename))
-    return None if result == _dos.ffi.NULL else Music(result, filename)
+    if result == _dos.ffi.NULL:
+        return None
+    return Music(get_filename(filename), result)
 
 
 def loadopb(filename: bytes | str | os.PathLike) -> Music | None:
     result = _dos.lib.loadopb(c_string(filename))
-    return None if result == _dos.ffi.NULL else Music(result, filename)
+    if result == _dos.ffi.NULL:
+        return None
+    return Music(get_filename(filename), result)
 
 
 def createmus(data: buffer) -> Music | None:
     result = _dos.lib.createmus(_dos.ffi.from_buffer(data), len(data))
-    return None if result == _dos.ffi.NULL else Music(result)
+    if result == _dos.ffi.NULL:
+        return None
+    return Music(filename=None, _music_ptr=result)
 
 
 def playmusic(music: Music, loop: bool = False, volume: int = 255) -> None:
+    global _current_music
     _dos.lib.playmusic(music._music_ptr, loop, volume)
+    # Prevent current music from being garbage collected
+    _current_music = music
 
 
 def stopmusic() -> None:
+    global _current_music
     _dos.lib.stopmusic()
+    _current_music = None
 
 
 def musicplaying() -> bool:
@@ -1053,7 +1073,9 @@ def setsoundmode(mode: SoundMode) -> None:
 
 def loadwav(filename: bytes | str | os.PathLike) -> Sound | None:
     result = _dos.lib.loadwav(c_string(filename))
-    return None if result == _dos.ffi.NULL else Sound(result, filename)
+    if result == _dos.ffi.NULL:
+        return None
+    return Sound(get_filename(filename), result)
 
 
 def createsound(
@@ -1064,7 +1086,9 @@ def createsound(
     data, size = _data_for_samples(samples)
     framecount = size // channels // 2  # 2 bytes per sample
     result = _dos.lib.createsound(channels, samplerate, framecount, data)
-    return None if result == _dos.ffi.NULL else Sound(result)
+    if result == _dos.ffi.NULL:
+        return None
+    return Sound(None, result)
 
 
 def playsound(channel: int,

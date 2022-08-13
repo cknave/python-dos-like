@@ -60,6 +60,9 @@ ffibuilder.cdef("""\
     // dos-like is designed as an executable, so just expose its main function to the API.
     int main(int argc, char **argv);
 
+    // We'll need free() because we're responsible for freeing some memory
+    void free(void *ptr);
+
     // 8< 8< 8< 8< 8< 8< 8< 8< 8< 8<  START COPY PASTE  8< 8< 8< 8< 8< 8< 8< 8< 8< 8<
 
     enum videomode_t {
