@@ -822,7 +822,14 @@ def cursoff() -> None:
     _dos.lib.cursoff()
 
 
-def loadgif(filename: bytes | str | os.PathLike) -> GIF | None:
+def loadgif(filename: bytes | str | os.PathLike) -> GIF:
+    """Load a GIF image.
+
+    :param filename: path to the GIF file
+    :return: :class:`GIF` image
+    :raises ValueError: if unable to load image
+
+    """
     width_ptr = _dos.ffi.new('int *')
     height_ptr = _dos.ffi.new('int *')
     palcount_ptr = _dos.ffi.new('int *')
@@ -831,7 +838,7 @@ def loadgif(filename: bytes | str | os.PathLike) -> GIF | None:
                               palcount_ptr, palette)
 
     if pixels == _dos.ffi.NULL:
-        return None
+        raise ValueError(f'Unable to load GIF {filename}')
     width = width_ptr[0]
     height = height_ptr[0]
     palcount = palcount_ptr[0]
@@ -1036,38 +1043,81 @@ def setinstrument(channel: int, instrument: int) -> None:
     _dos.lib.setinstrument(channel, instrument)
 
 
-def loadmid(filename: bytes | str | os.PathLike) -> Music | None:
+def loadmid(filename: bytes | str | os.PathLike) -> Music:
+    """Load music from a MIDI (.mid) file.
+
+    :param filename: filesystem path of the MIDI to load
+    :return: loaded MIDI music
+    :raises ValueError: if unable to load the music file
+
+    """
     result = _dos.lib.loadmid(c_string(filename))
     if result == _dos.ffi.NULL:
-        return None
+        raise ValueError(f'Failed to load music {filename}')
     return Music(get_filename(filename), result)
 
 
-def loadmus(filename: bytes | str | os.PathLike) -> Music | None:
+def loadmus(filename: bytes | str | os.PathLike) -> Music:
+    """Load music from a
+    `MUS <https://moddingwiki.shikadi.net/wiki/MUS_Format>`_ (.mus) file.
+
+    :param filename: filesystem path of the MUS to load
+    :return: loaded MUS music
+    :raises ValueError: if unable to load the music file
+
+    """
     result = _dos.lib.loadmus(c_string(filename))
     if result == _dos.ffi.NULL:
-        return None
+        raise ValueError(f'Failed to load music {filename}')
     return Music(get_filename(filename), result)
 
 
-def loadmod(filename: bytes | str | os.PathLike) -> Music | None:
+def loadmod(filename: bytes | str | os.PathLike) -> Music:
+    """Load music from a
+    `module <https://en.wikipedia.org/wiki/MOD_(file_format)>`_ (.mod) file.
+
+    :param filename: filesystem path of the MOD to load
+    :return: loaded MOD music
+    :raises ValueError: if unable to load the music file
+
+    """
     result = _dos.lib.loadmod(c_string(filename))
     if result == _dos.ffi.NULL:
-        return None
+        raise ValueError(f'Failed to load music {filename}')
     return Music(get_filename(filename), result)
 
 
-def loadopb(filename: bytes | str | os.PathLike) -> Music | None:
+def loadopb(filename: bytes | str | os.PathLike) -> Music:
+    """Load music from an
+    `OPBinaryLib <https://github.com/Enichan/OPBinaryLib>`_ (.opb) file.
+
+    :param filename: filesystem path of the OPB to load
+    :return: loaded OPB music
+    :raises ValueError: if unable to load the music file
+
+    """
     result = _dos.lib.loadopb(c_string(filename))
     if result == _dos.ffi.NULL:
-        return None
+        raise ValueError(f'Failed to load music {filename}')
     return Music(get_filename(filename), result)
 
 
-def createmus(data: buffer) -> Music | None:
-    result = _dos.lib.createmus(_dos.ffi.from_buffer(data), len(data))
+def createmus(data: buffer | bytes) -> Music:
+    """Load music from an in-memory
+     `MUS <https://moddingwiki.shikadi.net/wiki/MUS_Format>`_ (.mus) buffer.
+
+    :param data: buffer or byte string containing the MUS data
+    :return: loaded MUS music
+    :raises ValueError: if unable to load the music data
+
+    """
+    if isinstance(data, bytes):
+        c_data = _dos.ffi.new('char[]', data)
+    else:
+        c_data = _dos.ffi.from_buffer(data)
+    result = _dos.lib.createmus(c_data, len(data))
     if result == _dos.ffi.NULL:
-        return None
+        raise ValueError
     return Music(filename=None, _music_ptr=result)
 
 
@@ -1096,23 +1146,51 @@ def setsoundmode(mode: SoundMode) -> None:
     _dos.lib.setsoundmode(mode.value)
 
 
-def loadwav(filename: bytes | str | os.PathLike) -> Sound | None:
+def loadwav(filename: bytes | str | os.PathLike) -> Sound:
+    """Load a .wav sound file.
+
+    :param filename: filesystem path of the WAV to load
+    :return: new sound
+    :raises ValueError: if unable to load the sound
+
+    .. warning::
+
+        Sound memory is freed when the returned :class:`Sound` object is
+        garbage collected.  Deleting or releasing the last reference to a
+        playing sound may cause issues.
+
+    """
     result = _dos.lib.loadwav(c_string(filename))
     if result == _dos.ffi.NULL:
-        return None
+        raise ValueError(f'Unable to load sound {filename}')
     return Sound(get_filename(filename), result)
 
 
-def createsound(
-    channels: int,
-    samplerate: int,
-    samples: Samples,
-) -> Sound | None:
+def createsound(channels: int, samplerate: int, samples: Samples) -> Sound:
+    """Create a sound from a sample buffer.
+
+    :param channels: 1 for mono, 2 for stereo
+    :param samplerate: sample playback rate in 1000..44,100 Hz
+    :param samples: sample buffer in one of these formats:
+
+        * a list of integers in -32,768..32,767
+        * a ``short[]`` buffer
+
+    :return: new sound
+    :raises ValueError: for invalid parameters
+
+    .. warning::
+
+        Sound memory is freed when the returned :class:`Sound` object is
+        garbage collected.  Deleting or releasing the last reference to a
+        playing sound may cause issues.
+
+    """
     data, size = _data_for_samples(samples)
     framecount = size // channels // 2  # 2 bytes per sample
     result = _dos.lib.createsound(channels, samplerate, framecount, data)
     if result == _dos.ffi.NULL:
-        return None
+        raise ValueError('Invalid parameters')
     return Sound(None, result)
 
 
