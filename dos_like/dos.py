@@ -340,6 +340,10 @@ SOUND_CHANNELS = _dos.lib.SOUND_CHANNELS
 buffer = _dos.ffi.buffer
 
 RGB = collections.namedtuple('RGB', 'r g b')
+RGB.__doc__ = 'Red, green, and blue color tuple'
+RGB.r.__doc__ = 'Red channel, valid values 0..63'
+RGB.g.__doc__ = 'Green channel, valid values 0..63'
+RGB.b.__doc__ = 'Blue channel, valid values 0..63'
 
 Points: TypeAlias = Union[buffer, list[int], list[tuple[int, int]]]
 
@@ -388,11 +392,23 @@ def _data_for_samples(samples: Samples) -> tuple[_dos.ffi.CData, int]:
 
 @dataclasses.dataclass
 class GIF:
+    """GIF image."""
     filename: str
+    """GIF filename"""
+
     width: int
+    """Image width in pixels"""
+
     height: int
+    """Image height in pixels"""
+
     palette: list[RGB]
+    """Image color map"""
+
     pixels: buffer
+    """Image pixels in row-major order.  Values are indices of
+    :attr:`palette`."""
+
     _pixels_ptr: _dos.ffi.CData
 
     def __del__(self):
@@ -404,44 +420,70 @@ VideoMode = enum.Enum(
         k.removeprefix('videomode_'): v
         for k, v in _dos.lib.__dict__.items() if k.startswith('videomode_')
     })
+VideoMode.__doc__ = 'Enumeration of text and graphics modes.'
 videomode_40x25_8x8: VideoMode = getattr(VideoMode, '40x25_8x8')
+videomode_40x25_8x8.__doc__ = '40x25 text mode with 8x8 characters.'
 videomode_40x25_9x16: VideoMode = getattr(VideoMode, '40x25_9x16')
+videomode_40x25_9x16.__doc__ = '40x25 text mode with 9x16 characters.'
 videomode_80x25_8x16: VideoMode = getattr(VideoMode, '80x25_8x16')
+videomode_80x25_8x16.__doc__ = '80x25 text mode with 8x16 characters.'
 videomode_80x25_8x8: VideoMode = getattr(VideoMode, '80x25_8x8')
+videomode_80x25_8x8.__doc__ = '80x25 text mode with 8x8 characters.'
 videomode_80x25_9x16: VideoMode = getattr(VideoMode, '80x25_9x16')
+videomode_80x25_9x16.__doc__ = '80x25 text mode with 9x16 characters.'
 videomode_80x43_8x8: VideoMode = getattr(VideoMode, '80x43_8x8')
+videomode_80x43_8x8.__doc__ = '80x43 text mode with 8x8 characters.'
 videomode_80x50_8x8: VideoMode = getattr(VideoMode, '80x50_8x8')
+videomode_80x50_8x8.__doc__ = '80x50 text mode with 8x8 characters.'
 videomode_320x200: VideoMode = getattr(VideoMode, '320x200')
+videomode_320x200.__doc__ = '320x200 graphics mode.'
 videomode_320x240: VideoMode = getattr(VideoMode, '320x240')
+videomode_320x240.__doc__ = '320x240 graphics mode.'
 videomode_320x400: VideoMode = getattr(VideoMode, '320x400')
+videomode_320x400.__doc__ = '320x400 graphics mode.'
 videomode_640x200: VideoMode = getattr(VideoMode, '640x200')
+videomode_640x200.__doc__ = '640x200 graphics mode.'
 videomode_640x350: VideoMode = getattr(VideoMode, '640x350')
+videomode_640x350.__doc__ = '640x350 graphics mode.'
 videomode_640x400: VideoMode = getattr(VideoMode, '640x400')
+videomode_640x400.__doc__ = '640x400 graphics mode.'
 videomode_640x480: VideoMode = getattr(VideoMode, '640x480')
+videomode_640x480.__doc__ = '640x480 graphics mode.'
 
 
 class FontHandle(int):
+    """Handle to an installed font."""
     pass
 
 
 DEFAULT_FONT_8X8: FontHandle = FontHandle(_dos.lib.DEFAULT_FONT_8X8)
+DEFAULT_FONT_8X8.__doc__ = '8x8 font'
 DEFAULT_FONT_8X16: FontHandle = FontHandle(_dos.lib.DEFAULT_FONT_8X16)
+DEFAULT_FONT_8X16.__doc__ = '8x16 font'
 DEFAULT_FONT_9X16: FontHandle = FontHandle(_dos.lib.DEFAULT_FONT_9X16)
+DEFAULT_FONT_9X16.__doc__ = '9x16 font'
 
 
 class SoundBankHandle(int):
+    """Handle to an installed sound bank."""
     pass
 
 
 DEFAULT_SOUNDBANK_AWE32: SoundBankHandle = SoundBankHandle(
     _dos.lib.DEFAULT_SOUNDBANK_AWE32)
+DEFAULT_SOUNDBANK_AWE32.__doc__ = 'Sound Blaster AWE32 sound bank.'
 DEFAULT_SOUNDBANK_SB16: SoundBankHandle = SoundBankHandle(
     _dos.lib.DEFAULT_SOUNDBANK_SB16)
+DEFAULT_SOUNDBANK_SB16.__doc__ = 'Sound Blaster 16 sound bank.'
 
 
 @dataclasses.dataclass
 class Music:
+    """Loaded music."""
+
     filename: str | None
+    """Original filename, if loaded from disk."""
+
     _music_ptr: _dos.ffi.CData
 
     def __del__(self):
@@ -453,51 +495,83 @@ SoundMode = enum.Enum(
         k.removeprefix('soundmode_'): v
         for k, v in _dos.lib.__dict__.items() if k.startswith('soundmode_')
     })
+SoundMode.__doc__ = 'Enumeration of sound modes.'
 soundmode_8bit_mono_5000: SoundMode = getattr(SoundMode, '8bit_mono_5000')
+soundmode_8bit_mono_5000.__doc__ = '8-bit, 1 channel, 5,000 Hz sound mode'
 soundmode_8bit_mono_8000: SoundMode = getattr(SoundMode, '8bit_mono_8000')
+soundmode_8bit_mono_8000.__doc__ = '8-bit, 1 channel, 8,000 Hz sound mode'
 soundmode_8bit_mono_11025: SoundMode = getattr(SoundMode, '8bit_mono_11025')
+soundmode_8bit_mono_11025.__doc__ = '8-bit, 1 channel, 11,025 Hz sound mode'
 soundmode_8bit_mono_16000: SoundMode = getattr(SoundMode, '8bit_mono_16000')
+soundmode_8bit_mono_16000.__doc__ = '8-bit, 1 channel, 16,000 Hz sound mode'
 soundmode_8bit_mono_22050: SoundMode = getattr(SoundMode, '8bit_mono_22050')
+soundmode_8bit_mono_22050.__doc__ = '8-bit, 1 channel, 22,050 Hz sound mode'
 soundmode_8bit_mono_32000: SoundMode = getattr(SoundMode, '8bit_mono_32000')
+soundmode_8bit_mono_32000.__doc__ = '8-bit, 1 channel, 32,000 Hz sound mode'
 soundmode_8bit_mono_44100: SoundMode = getattr(SoundMode, '8bit_mono_44100')
+soundmode_8bit_mono_44100.__doc__ = '8-bit, 1 channel, 44,100 Hz sound mode'
 soundmode_16bit_mono_5000: SoundMode = getattr(SoundMode, '16bit_mono_5000')
+soundmode_16bit_mono_5000.__doc__ = '16-bit, 1 channel, 5,000 Hz sound mode'
 soundmode_16bit_mono_8000: SoundMode = getattr(SoundMode, '16bit_mono_8000')
+soundmode_16bit_mono_8000.__doc__ = '16-bit, 1 channel, 8,000 Hz sound mode'
 soundmode_16bit_mono_11025: SoundMode = getattr(SoundMode, '16bit_mono_11025')
+soundmode_16bit_mono_11025.__doc__ = '16-bit, 1 channel, 11,025 Hz sound mode'
 soundmode_16bit_mono_16000: SoundMode = getattr(SoundMode, '16bit_mono_16000')
+soundmode_16bit_mono_16000.__doc__ = '16-bit, 1 channel, 16,000 Hz sound mode'
 soundmode_16bit_mono_22050: SoundMode = getattr(SoundMode, '16bit_mono_22050')
+soundmode_16bit_mono_22050.__doc__ = '16-bit, 1 channel, 22,050 Hz sound mode'
 soundmode_16bit_mono_32000: SoundMode = getattr(SoundMode, '16bit_mono_32000')
+soundmode_16bit_mono_32000.__doc__ = '16-bit, 1 channel, 32,000 Hz sound mode'
 soundmode_16bit_mono_44100: SoundMode = getattr(SoundMode, '16bit_mono_44100')
+soundmode_16bit_mono_44100.__doc__ = '16-bit, 1 channel, 44,100 Hz sound mode'
 soundmode_8bit_stereo_5000: SoundMode = getattr(SoundMode, '8bit_stereo_5000')
+soundmode_8bit_stereo_5000.__doc__ = '8-bit, 2 channel, 5,000 Hz sound mode'
 soundmode_8bit_stereo_8000: SoundMode = getattr(SoundMode, '8bit_stereo_8000')
+soundmode_8bit_stereo_8000.__doc__ = '8-bit, 2 channel, 8,000 Hz sound mode'
 soundmode_8bit_stereo_11025: SoundMode = getattr(SoundMode,
                                                  '8bit_stereo_11025')
+soundmode_8bit_stereo_11025.__doc__ = '8-bit, 2 channel, 11,025 Hz sound mode'
 soundmode_8bit_stereo_16000: SoundMode = getattr(SoundMode,
                                                  '8bit_stereo_16000')
+soundmode_8bit_stereo_16000.__doc__ = '8-bit, 2 channel, 16,000 Hz sound mode'
 soundmode_8bit_stereo_22050: SoundMode = getattr(SoundMode,
                                                  '8bit_stereo_22050')
+soundmode_8bit_stereo_22050.__doc__ = '8-bit, 2 channel, 22,050 Hz sound mode'
 soundmode_8bit_stereo_32000: SoundMode = getattr(SoundMode,
                                                  '8bit_stereo_32000')
+soundmode_8bit_stereo_32000.__doc__ = '8-bit, 2 channel, 32,000 Hz sound mode'
 soundmode_8bit_stereo_44100: SoundMode = getattr(SoundMode,
                                                  '8bit_stereo_44100')
+soundmode_8bit_stereo_44100.__doc__ = '8-bit, 2 channel, 44,100 Hz sound mode'
 soundmode_16bit_stereo_5000: SoundMode = getattr(SoundMode,
                                                  '16bit_stereo_5000')
+soundmode_16bit_stereo_5000.__doc__ = '16-bit, 2 channel, 5,000 Hz sound mode'
 soundmode_16bit_stereo_8000: SoundMode = getattr(SoundMode,
                                                  '16bit_stereo_8000')
+soundmode_16bit_stereo_8000.__doc__ = '16-bit, 2 channel, 8,000 Hz sound mode'
 soundmode_16bit_stereo_11025: SoundMode = getattr(SoundMode,
                                                   '16bit_stereo_11025')
+soundmode_16bit_stereo_11025.__doc__ = '16-bit, 2 channel, 11,025 Hz sound mode'
 soundmode_16bit_stereo_16000: SoundMode = getattr(SoundMode,
                                                   '16bit_stereo_16000')
+soundmode_16bit_stereo_16000.__doc__ = '16-bit, 2 channel, 16,000 Hz sound mode'
 soundmode_16bit_stereo_22050: SoundMode = getattr(SoundMode,
                                                   '16bit_stereo_22050')
+soundmode_16bit_stereo_22050.__doc__ = '16-bit, 2 channel, 22,050 Hz sound mode'
 soundmode_16bit_stereo_32000: SoundMode = getattr(SoundMode,
                                                   '16bit_stereo_32000')
+soundmode_16bit_stereo_32000.__doc__ = '16-bit, 2 channel, 32,000 Hz sound mode'
 soundmode_16bit_stereo_44100: SoundMode = getattr(SoundMode,
                                                   '16bit_stereo_44100')
+soundmode_16bit_stereo_44100.__doc__ = '16-bit, 2 channel, 44,100 Hz sound mode'
 
 
 @dataclasses.dataclass
 class Sound:
+    """Loaded sound."""
     filename: str | None
+    """Original filename, if loaded from disk."""
+
     _sound_ptr: _dos.ffi.CData
 
     def __del__(self):
@@ -510,7 +584,14 @@ KeyCode = int_with_flags.IntWithFlags(
         for k, v in _dos.lib.__dict__.items() if k.startswith('KEY')
     })
 KeyCode._flags_ = {'KEY_MODIFIER_RELEASED': _dos.lib.KEY_MODIFIER_RELEASED}
-
+KeyCode.__doc__ = """\
+    Keyboard code.
+    
+    May be bitwise or'd with :data:`KEY_MODIFIER_RELEASED` to indicate a key has been
+    released.  Otherwise indicates a key has been pressed.
+    
+    """
+# TODO: these all need docstrings
 KEY_INVALID: KeyCode = getattr(KeyCode, 'INVALID')
 KEY_LBUTTON: KeyCode = getattr(KeyCode, 'LBUTTON')
 KEY_RBUTTON: KeyCode = getattr(KeyCode, 'RBUTTON')
@@ -686,6 +767,8 @@ KEY_OEM_CLEAR: KeyCode = getattr(KeyCode, 'OEM_CLEAR')
 KEYCOUNT: KeyCode = getattr(KeyCode, 'KEYCOUNT')
 KEYPADDING: KeyCode = getattr(KeyCode, 'KEYPADDING')
 KEY_MODIFIER_RELEASED: KeyCode = getattr(KeyCode, 'MODIFIER_RELEASED')
+KEY_MODIFIER_RELEASED.__doc__ = \
+    "or'd with a :class:`KeyCode` to indicate a key has been released."
 
 #
 # UTILITIES
@@ -693,6 +776,13 @@ KEY_MODIFIER_RELEASED: KeyCode = getattr(KeyCode, 'MODIFIER_RELEASED')
 
 
 def new_buffer(data: bytes = None, size: int = None) -> buffer:
+    """Allocate a new buffer to pass to dos-like functions that accept one.
+
+    :param data: data to fill the buffer with, or use ``None`` and **size**
+    :param size: if data is ``None``, allocate a buffer of this size in bytes
+    :return: new :class:`buffer`
+
+    """
     if data is None and size is None:
         raise ValueError('data or size is required')
     if size is None:
@@ -702,6 +792,14 @@ def new_buffer(data: bytes = None, size: int = None) -> buffer:
 
 def c_string(s: str | bytes | os.PathLike,
              encoding: str | dict[str, bytes] = 'utf-8') -> _dos.lib.CData:
+    """Convert a python string-like type to a C string.
+
+    :param s: python string-like type
+    :param encoding: encoding name (e.g. "utf-8") or a dict mapping characters
+        to bytes
+    :return: C string
+
+    """
     if isinstance(s, bytes):
         encoded = s
     else:
@@ -714,6 +812,12 @@ def c_string(s: str | bytes | os.PathLike,
 
 
 def get_filename(path: bytes | str | os.PathLike | None) -> str | None:
+    """Get the filename part of a path.
+
+    :param path: string-like type containing a filesystem path
+    :return: filename from that path, or ``None`` if the path was ``None``
+
+    """
     if path is None:
         return None
     if isinstance(path, bytes):
@@ -729,39 +833,93 @@ def get_filename(path: bytes | str | os.PathLike | None) -> str | None:
 
 
 def setvideomode(mode: VideoMode) -> None:
+    """Set the video mode.
+
+    :param mode: new video mode
+
+    """
     _dos.lib.setvideomode(mode.value)
 
 
 def setdoublebuffer(enabled: bool) -> None:
+    """Enable or disable double buffer mode.
+
+    :param enabled: new double buffer mode
+
+    When enabled, updates to the screen buffer do not appear on screen until
+    :func:`swapbuffers` is called.
+
+    """
     _dos.lib.setdoublebuffer(enabled)
 
 
 def screenwidth() -> int:
+    """Get the current screen width.
+
+    :return: width in characters (if text mode) or pixels (if graphics mode)
+
+    """
     return _dos.lib.screenwidth()
 
 
 def screenheight() -> int:
+    """Get the current screen height.
+
+    :return: height in characters (if text mode) or pixels (if graphics mode)
+
+    """
     return _dos.lib.screenheight()
 
 
 def screenbuffer() -> buffer:
+    """Get the screen buffer.
+
+    :return: screen buffer of pixels if graphics mode, or (character, color)
+        pairs if text mode, in row-major order
+
+    This will return the on-screen buffer in single buffer mode, or the
+    off-screen buffer double buffer mode.
+
+    Once :func:`swapbuffers` is called, this buffer will be displayed, and you
+    will need to use its returned buffer as the new off-screen buffer.
+
+    """
     return _dos.ffi.buffer(_dos.lib.screenbuffer(), SCREEN_BUFFER_SIZE)
 
 
 def swapbuffers() -> buffer:
+    """In double buffer mode, swap the off-screen buffer with the on-screen
+    buffer.
+
+    :return: the new off-screen buffer
+
+    """
     return _dos.ffi.buffer(_dos.lib.swapbuffers(), SCREEN_BUFFER_SIZE)
 
 
 def waitvbl() -> None:
+    """Wait for the next vertical blanking interval (screen refresh)."""
     _dos.lib.waitvbl()
 
 
 def setpal(
     index: int,
-    r: RGB | tuple | int,
+    r: RGB | tuple[int, int, int] | int,
     g: int = None,
     b: int = None,
 ) -> None:
+    """Set a palette entry.
+
+    May be called with a single :class:`RGB` or 3-``tuple`` argument, or 3
+    ``int`` arguments.
+
+    :param index: palette index to update, 0..255
+    :param r: new :class:`RGB` or 3-``tuple`` color, or the red component in
+        0..63
+    :param g: green component in 0..63
+    :param b: blue component in 0..63
+
+    """
     if not isinstance(r, int) and (g is not None or b is not None):
         raise ValueError('Either pass in a single RGB argument, or 3 channels')
     if isinstance(r, tuple):
@@ -773,52 +931,119 @@ def setpal(
 
 
 def getpal(index: int) -> RGB:
+    """Get a palette entry.
+
+    :param index: palette index in 0..255
+    :return: color at that index
+
+    """
     result = _dos.ffi.new('int[3]')
     _dos.lib.getpal(index, result + 0, result + 1, result + 2)
     return RGB(result[0], result[1], result[2])
 
 
 def shuttingdown() -> bool:
+    """Check if the user has requested to quit by closing the window.
+
+    :return: True if the app window is closing
+
+    This should be checked periodically. When it returns True, the main
+    function should return.
+
+    """
     return bool(_dos.lib.shuttingdown())
 
 
 def cputs(string: bytes | str | os.PathLike) -> None:
+    """Display text and advance the cursor (text mode only).
+
+    :param string: text to put to the screen
+
+    If the text would extend beyond the current line, it will be truncated and
+    the cursor will remain at the end of the line.
+
+    In graphics mode, see :func:`outtextxy`, :func:`wraptextxy`, and
+    :func:`centertextxy`.
+
+    """
     _dos.lib.cputs(c_string(string, encoding=cp437.ENCODING))
 
 
 def textcolor(color: int) -> None:
+    """Change the text color (text mode only).
+
+    :param color: text color in 0..15
+
+    """
     _dos.lib.textcolor(color)
 
 
 def textbackground(color: int) -> None:
+    """Change the text background color (text mode only).
+
+    :param color: background color in 0..15
+
+    """
     _dos.lib.textbackground(color)
 
 
 def gotoxy(x: int, y: int) -> None:
+    """Set the cursor position (text mode only).
+
+    :param x: cursor x-position, starting at 0
+    :param y: cursor y-position, starting at 0
+
+    """
     _dos.lib.gotoxy(x, y)
 
 
 def wherex() -> int:
+    """Return the current cursor x-position.
+
+    :return: cursor x-position
+
+    """
     return _dos.lib.wherex()
 
 
 def wherey() -> int:
+    """Return the current cursor y-position.
+
+    :return: cursor y-position
+
+    """
     return _dos.lib.wherey()
 
 
 def clrscr() -> None:
+    """Clear the screen (text mode only).
+
+    Fill the screen with the space character (``b'\\x20'``) with the current text
+    color.
+
+    For graphics mode, see :func:`clearscreen`.
+
+    """
     _dos.lib.clrscr()
 
 
 def curson() -> None:
+    """Show the text mode cursor."""
     _dos.lib.curson()
 
 
 def cursoff() -> None:
+    """Hide the text mode cursor."""
     _dos.lib.cursoff()
 
 
 def loadgif(filename: bytes | str | os.PathLike) -> GIF | None:
+    """Load a GIF image.
+
+    :param filename: path to the GIF file
+    :return: :class:`GIF` image or ``None`` if failed to load
+
+    """
     width_ptr = _dos.ffi.new('int *')
     height_ptr = _dos.ffi.new('int *')
     palcount_ptr = _dos.ffi.new('int *')
@@ -852,6 +1077,19 @@ def blit(
     srcw: int,
     srch: int,
 ) -> None:
+    """Copy an image buffer to the screen.
+
+    :param x: destination x-position
+    :param y: destination y-position
+    :param source: source image buffer, e.g. :attr:`GIF.pixels`
+    :param width: source image width
+    :param height: source image height
+    :param srcx: source x-position in the image
+    :param srcy: source y-position in the image
+    :param srcw: width to copy
+    :param srch: height to copy
+
+    """
     _dos.lib.blit(x, y, _dos.ffi.from_buffer(source), width, height, srcx,
                   srcy, srcw, srch)
 
@@ -868,6 +1106,20 @@ def maskblit(
     srch: int,
     colorkey: int,
 ) -> None:
+    """Copy an image buffer to the screen using 1 color as transparent.
+
+    :param x: destination x-position
+    :param y: destination y-position
+    :param source: source image buffer, e.g. :attr:`GIF.pixels`
+    :param width: source image width
+    :param height: source image height
+    :param srcx: source x-position in the image
+    :param srcy: source y-position in the image
+    :param srcw: width to copy
+    :param srch: height to copy
+    :param colorkey: palette index to use as transparent
+
+    """
     _dos.lib.maskblit(x, y, _dos.ffi.from_buffer(source), width, height, srcx,
                       srcy, srcw, srch, colorkey)
 

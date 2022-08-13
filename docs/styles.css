@@ -1,0 +1,3 @@
+.toctree-wrapper:first-of-type ul {
+    margin-bottom: 0;
+}
