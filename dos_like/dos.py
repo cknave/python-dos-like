@@ -559,19 +559,24 @@ soundmode_16bit_stereo_8000: SoundMode = getattr(SoundMode,
 soundmode_16bit_stereo_8000.__doc__ = '16-bit, 2 channel, 8,000 Hz sound mode'
 soundmode_16bit_stereo_11025: SoundMode = getattr(SoundMode,
                                                   '16bit_stereo_11025')
-soundmode_16bit_stereo_11025.__doc__ = '16-bit, 2 channel, 11,025 Hz sound mode'
+soundmode_16bit_stereo_11025.__doc__ = ('16-bit, 2 channel, 11,025 Hz sound '
+                                        'mode')
 soundmode_16bit_stereo_16000: SoundMode = getattr(SoundMode,
                                                   '16bit_stereo_16000')
-soundmode_16bit_stereo_16000.__doc__ = '16-bit, 2 channel, 16,000 Hz sound mode'
+soundmode_16bit_stereo_16000.__doc__ = ('16-bit, 2 channel, 16,000 Hz sound '
+                                        'mode')
 soundmode_16bit_stereo_22050: SoundMode = getattr(SoundMode,
                                                   '16bit_stereo_22050')
-soundmode_16bit_stereo_22050.__doc__ = '16-bit, 2 channel, 22,050 Hz sound mode'
+soundmode_16bit_stereo_22050.__doc__ = ('16-bit, 2 channel, 22,050 Hz sound '
+                                        'mode')
 soundmode_16bit_stereo_32000: SoundMode = getattr(SoundMode,
                                                   '16bit_stereo_32000')
-soundmode_16bit_stereo_32000.__doc__ = '16-bit, 2 channel, 32,000 Hz sound mode'
+soundmode_16bit_stereo_32000.__doc__ = ('16-bit, 2 channel, 32,000 Hz sound '
+                                        'mode')
 soundmode_16bit_stereo_44100: SoundMode = getattr(SoundMode,
                                                   '16bit_stereo_44100')
-soundmode_16bit_stereo_44100.__doc__ = '16-bit, 2 channel, 44,100 Hz sound mode'
+soundmode_16bit_stereo_44100.__doc__ = ('16-bit, 2 channel, 44,100 Hz sound'
+                                        'mode')
 
 
 @dataclasses.dataclass
@@ -595,8 +600,8 @@ KeyCode._flags_ = {'KEY_MODIFIER_RELEASED': _dos.lib.KEY_MODIFIER_RELEASED}
 KeyCode.__doc__ = """\
     Keyboard code.
 
-    May be bitwise or'd with :data:`KEY_MODIFIER_RELEASED` to indicate a key has been
-    released.  Otherwise indicates a key has been pressed.
+    May be bitwise or'd with :data:`KEY_MODIFIER_RELEASED` to indicate a key
+    has been released.  Otherwise indicates a key has been pressed.
 
     """
 # TODO: these all need docstrings
@@ -1028,8 +1033,8 @@ def wherey() -> int:
 def clrscr() -> None:
     """Clear the screen (text mode only).
 
-    Fill the screen with the space character (``b'\\x20'``) with the current text
-    and background color.
+    Fill the screen with the space character (``b'\\x20'``) with the current
+    text and background color.
 
     For graphics mode, see :func:`clearscreen`.
 
