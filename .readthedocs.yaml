@@ -10,6 +10,7 @@ build:
   tools:
     python: "3.10"
   apt_packages:
+    - libglew-dev
     - libsdl2-dev
 
 # Optionally declare the Python requirements required to build your docs
