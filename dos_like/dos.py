@@ -346,6 +346,10 @@ Points: TypeAlias = Union[buffer, list[int], list[tuple[int, int]]]
 # Reference to the current music to prevent it from being garbage collected
 _current_music: Music | None = None
 
+# Reference to the current draw target to prevent it from being garbage
+# collected
+_current_draw_target: buffer | None = None
+
 
 def _data_for_points(points: Points) -> _dos.ffi.CData:
     """Return a CFFI data object for an array of ints representing 2D points.
@@ -889,14 +893,35 @@ def putpixel(x: int, y: int, color: int) -> None:
 
 
 def setdrawtarget(pixels: buffer, width: int, height: int) -> None:
+    """Start drawing to an off-screen buffer.
+
+    :param pixels: pixel buffer to draw to
+    :param width: width of the pixel buffer
+    :param height: height of the pixel buffer
+
+    Future draw calls will update **pixels** instead of the screen buffer.  To
+    resume drawing to the screen, call :func:`resetdrawtarget`.
+
+    """
+    global _current_draw_target
     size = width * height
     if len(pixels) < size:
         raise ValueError(f'pixel buffer must be at least {size} bytes')
     _dos.lib.setdrawtarget(_dos.ffi.from_buffer(pixels), width, height)
+    # Retain the draw target to prevent it from being garbage collected
+    _current_draw_target = pixels
 
 
 def resetdrawtarget() -> None:
+    """Start drawing to the screen buffer.
+
+    Call this to stop drawing to the off-screen buffer set by
+    :func:`setdrawtarget`.
+
+    """
+    global _current_draw_target
     _dos.lib.resetdrawtarget()
+    _current_draw_target = None
 
 
 def setcolor(color: int) -> None:
