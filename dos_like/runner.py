@@ -5,7 +5,7 @@ from typing import Callable, Optional
 
 try:
     from typing import TypeAlias
-except ImportError:
+except ImportError:  # pragma: no cover
     from typing_extensions import TypeAlias
 
 from . import _dos

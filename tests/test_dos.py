@@ -10,7 +10,7 @@ import dos_like
 from dos_like import dos
 
 
-class Tests(unittest.TestCase):
+class DosAPITests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -543,6 +543,10 @@ class Tests(unittest.TestCase):
         dos.stopmusic()
         self.assertFalse(dos.musicplaying())
 
+    def test_createmus_with_garbage_data_returns_none(self):
+        data = dos.new_buffer(b'\x00')
+        self.assertIsNone(dos.createmus(data))
+
     def test_load_and_play_wav(self):
         wav_path = pathlib.Path(__file__).parent / 'data' / 'test.wav'
         sound = dos.loadwav(wav_path)
@@ -551,6 +555,9 @@ class Tests(unittest.TestCase):
         self.assertTrue(dos.soundplaying(0))
         dos.stopsound(0)
         self.assertFalse(dos.soundplaying(0))
+
+    def test_load_nonexistent_wav_returns_none(self):
+        self.assertIsNone(dos.loadwav(str(uuid.uuid4())))
 
     def test_createsound(self):
         sample_rate = 8000
@@ -578,6 +585,10 @@ class Tests(unittest.TestCase):
             dos.stopsound(0)
             self.assertFalse(dos.soundplaying(0),
                              f'for samples {type(samples)}')
+
+    def test_createsound_with_garbage_params_returns_none(self):
+        sound = dos.createsound(channels=1000, samplerate=999999, samples=[42])
+        self.assertIsNone(sound)
 
     def test_mouse_coords(self):
         # Not much to test here
@@ -607,3 +618,19 @@ class Tests(unittest.TestCase):
     def test_soundvolume(self):
         dos.soundvolume(0, 255, 255)
         # Not much else to test
+
+
+class GetFilenameTests(unittest.TestCase):
+
+    def test_none(self):
+        self.assertIsNone(dos.get_filename(None))
+
+    def test_bytes(self):
+        self.assertEqual('🎉', dos.get_filename('foo/🎉'.encode('utf-8')))
+
+    def test_str(self):
+        self.assertEqual('a string', dos.get_filename('bar/a string'))
+
+    def test_path(self):
+        self.assertEqual('a path',
+                         dos.get_filename(pathlib.Path('baaz/a path')))

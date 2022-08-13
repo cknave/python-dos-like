@@ -9,7 +9,7 @@ from typing import Union
 
 try:
     from typing import TypeAlias
-except ImportError:
+except ImportError:  # pragma: no cover
     from typing_extensions import TypeAlias
 
 from . import _dos, cp437, int_with_flags
