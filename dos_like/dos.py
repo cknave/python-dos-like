@@ -8,6 +8,11 @@ import pathlib
 import typing
 from typing import Sized, Union
 
+try:
+    from typing import TypeAlias  # type: ignore
+except ImportError:
+    from typing_extensions import TypeAlias  # type: ignore
+
 from . import _dos, cp437, int_with_flags
 
 __all__ = [
@@ -335,19 +340,24 @@ SOUND_CHANNELS = _dos.lib.SOUND_CHANNELS
 """Maximum number of channels for sounds."""
 
 if typing.TYPE_CHECKING:
-    from typing import TypeAlias  # type: ignore
-    from typing_extensions import TypeAlias  # type: ignore
+    # Type checker gets to use Readable/WriteableBuffer, but needs bogus cffi
+    # CData and buffer types.
     import _typeshed
     import cffi
     buffer: TypeAlias = cffi.buffer
     CData: TypeAlias = cffi.CData
     WriteableBuffer: TypeAlias = Union[buffer, _typeshed.WriteableBuffer]
     ReadableBuffer: TypeAlias = Union[buffer, _typeshed.ReadableBuffer]
-    Points: TypeAlias = Union[list[int], list[tuple[int, int]], ReadableBuffer]
-    Samples: TypeAlias = Union[list[int], ReadableBuffer]
 else:
+    # Runtime can use the real cffi types, but can't use the typeshed
+    # Readable/WriteableBuffer types.
     CData = _dos.ffi.CData
     buffer = _dos.ffi.buffer
+    WriteableBuffer: TypeAlias = Union[bytearray, memoryview, CData, buffer]
+    ReadableBuffer: TypeAlias = Union[WriteableBuffer, bytes]
+
+Points: TypeAlias = Union[list[int], list[tuple[int, int]], ReadableBuffer]
+Samples: TypeAlias = Union[list[int], ReadableBuffer]
 
 RGB = collections.namedtuple('RGB', 'r g b')
 RGB.__doc__ = 'Red, green, and blue color tuple'
@@ -1657,10 +1667,7 @@ def createmus(data: ReadableBuffer | bytes) -> Music:
     :raises ValueError: if unable to load the music data
 
     """
-    if isinstance(data, bytes):
-        c_data = _dos.ffi.new('char[]', data)
-    else:
-        c_data = _dos.ffi.from_buffer(data)
+    c_data = _dos.ffi.from_buffer(data)
     result = _dos.lib.createmus(c_data, buffer_size(data))
     if result == _dos.ffi.NULL:
         raise ValueError

@@ -5,6 +5,11 @@ Gustavsson.
 
 .. image:: https://github.com/cknave/python-dos-like/actions/workflows/testing.yml/badge.svg
   :target: https://github.com/cknave/python-dos-like/actions/workflows/testing.yml
+  :alt: Tests status 
+
+.. image:: https://readthedocs.org/projects/python-dos-like/badge/?version=latest
+  :target: https://python-dos-like.readthedocs.io/en/latest/?badge=latest
+  :alt: Documentation Status
 
 .. _dos-like: https://mattiasgustavsson.itch.io/dos-like
 
