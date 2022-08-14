@@ -8,11 +8,6 @@ import pathlib
 import typing
 from typing import Sized, Union
 
-try:
-    from typing import TypeAlias
-except ImportError:  # pragma: no cover
-    from typing_extensions import TypeAlias
-
 from . import _dos, cp437, int_with_flags
 
 __all__ = [
@@ -340,6 +335,8 @@ SOUND_CHANNELS = _dos.lib.SOUND_CHANNELS
 """Maximum number of channels for sounds."""
 
 if typing.TYPE_CHECKING:
+    from typing import TypeAlias  # type: ignore
+    from typing_extensions import TypeAlias  # type: ignore
     import _typeshed
     import cffi
     buffer: TypeAlias = cffi.buffer

@@ -4,9 +4,9 @@ import threading
 from typing import Callable, Optional
 
 try:
-    from typing import TypeAlias
+    from typing import TypeAlias  # type: ignore
 except ImportError:  # pragma: no cover
-    from typing_extensions import TypeAlias
+    from typing_extensions import TypeAlias  # type: ignore
 
 from dos_like import _dos
 
