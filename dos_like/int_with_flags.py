@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Mapping
+from typing import Any, Mapping
 
 import aenum
 
@@ -24,7 +24,9 @@ class IntWithFlags(enum.IntEnum):
         return value, flags
 
     @classmethod
-    def _missing_(cls, value: int) -> enum.IntEnum | None:
+    def _missing_(cls, value: Any) -> enum.IntEnum | None:
+        if not isinstance(value, int):
+            return None
         int_value, flags = cls._decompose(value)
         for match_name, match_value in cls.__members__.items():
             if match_value == int_value:

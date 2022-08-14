@@ -7,7 +7,7 @@ import unittest
 import uuid
 
 import dos_like
-from dos_like import dos
+from dos_like import _dos, dos
 
 
 class DosAPITests(unittest.TestCase):
@@ -572,7 +572,7 @@ class DosAPITests(unittest.TestCase):
                 value = -amplitude
             samples_ints.extend([value] * channels)
         samples_buffer = dos_like._dos.ffi.buffer(
-            dos_like._dos.ffi.new('short[]', samples_ints))
+            _dos.ffi.new('short[]', samples_ints))
 
         for samples in samples_ints, samples_buffer:
             sound = dos.createsound(channels, sample_rate, samples)
@@ -598,15 +598,19 @@ class DosAPITests(unittest.TestCase):
         with self.assertRaises(ValueError):
             dos.new_buffer()
 
-    def test_dos_setpal_with_mixed_args_fails(self):
+    def test_setpal_with_mixed_args_fails(self):
         with self.assertRaises(ValueError):
             dos.setpal(0, dos.RGB(1, 2, 3), 4, 5)
         with self.assertRaises(ValueError):
             dos.setpal(0, (1, 2, 3), 4, 5)
 
-    def test_dos_setpal_with_non_3_tuple_fails(self):
+    def test_setpal_with_non_3_tuple_fails(self):
         with self.assertRaises(ValueError):
             dos.setpal(0, (1, 2, 3, 4))
+
+    def test_setpal_with_1_int_fails(self):
+        with self.assertRaises(ValueError):
+            dos.setpal(0, 1)
 
     def test_setsoundmode(self):
         dos.setsoundmode(dos.soundmode_16bit_stereo_44100)
@@ -631,3 +635,22 @@ class GetFilenameTests(unittest.TestCase):
     def test_path(self):
         self.assertEqual('a path',
                          dos.get_filename(pathlib.Path('baaz/a path')))
+
+
+class BufferSizeTests(unittest.TestCase):
+
+    def test_cdata_buffer_size(self):
+        cdata = _dos.ffi.new('char[42]')
+        self.assertEqual(42, dos.buffer_size(cdata))
+
+    def test_buffer_buffer_size(self):
+        b = dos.new_buffer(size=27)
+        self.assertEqual(27, dos.buffer_size(b))
+
+    def test_list_buffer_size(self):
+        lst = [0] * 12
+        self.assertEqual(12, dos.buffer_size(lst))
+
+    def test_unsized_buffer_size_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            dos.buffer_size(None)

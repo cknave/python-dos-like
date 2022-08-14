@@ -1,7 +1,8 @@
-/build
 .coverage*
+.eggs
+/*.egg-info
+/.mypi_cache
+/build
 /dist
 /dos_like/_dos.*
-/*.egg-info
-.eggs
 __pycache__

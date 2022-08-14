@@ -61,3 +61,7 @@ class TestIntWithFlags(unittest.TestCase):
             'three|flag1|flag2',
             (self.enum.three | self.enum.flag1 | self.enum.flag2).name,
         )
+
+    def test_lookup_non_int_value_fails(self):
+        with self.assertRaises(ValueError):
+            self.enum('ohno')

@@ -8,7 +8,7 @@ try:
 except ImportError:  # pragma: no cover
     from typing_extensions import TypeAlias
 
-from . import _dos
+from dos_like import _dos
 
 MainFunc: TypeAlias = Callable[[], Optional[int]]
 """dos-like python main function."""
@@ -21,6 +21,7 @@ _raised_exception: Exception | None = None
 @_dos.ffi.def_extern()
 def _pydosmain(_: int, __: list[str]) -> int:
     """Called by C function dosmain()."""
+    assert _main_fn is not None
     try:
         return _main_fn() or 0
     except Exception as e:

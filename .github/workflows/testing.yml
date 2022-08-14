@@ -53,6 +53,10 @@ jobs:
       run: |
         # stop the build if there are any formatting errors
         python -m yapf -qr dos_like tests
+    - name: Check types with mypy
+      run: |
+        # stop the build if there are any typing errors
+        python -m mypy dos_like
     - name: Test with unittest
       env:
         runner: ${{ matrix.os == 'ubuntu-latest' && 'xvfb-run' || '' }}

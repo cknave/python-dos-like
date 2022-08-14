@@ -5,7 +5,8 @@ import dataclasses
 import enum
 import os
 import pathlib
-from typing import Union
+import typing
+from typing import Sized, Union
 
 try:
     from typing import TypeAlias
@@ -207,7 +208,6 @@ __all__ = [
     'bar',
     'blit',
     'boundaryfill',
-    'buffer',
     'centertextxy',
     'circle',
     'clearscreen',
@@ -339,9 +339,18 @@ MUSIC_CHANNELS = _dos.lib.MUSIC_CHANNELS
 SOUND_CHANNELS = _dos.lib.SOUND_CHANNELS
 """Maximum number of channels for sounds."""
 
-# The buffer protocol cannot be referenced by python code,
-# so expose cffi's concrete buffer (see PEP 688)
-buffer = _dos.ffi.buffer
+if typing.TYPE_CHECKING:
+    import _typeshed
+    import cffi
+    buffer: TypeAlias = cffi.buffer
+    CData: TypeAlias = cffi.CData
+    WriteableBuffer: TypeAlias = Union[buffer, _typeshed.WriteableBuffer]
+    ReadableBuffer: TypeAlias = Union[buffer, _typeshed.ReadableBuffer]
+    Points: TypeAlias = Union[list[int], list[tuple[int, int]], ReadableBuffer]
+    Samples: TypeAlias = Union[list[int], ReadableBuffer]
+else:
+    CData = _dos.ffi.CData
+    buffer = _dos.ffi.buffer
 
 RGB = collections.namedtuple('RGB', 'r g b')
 RGB.__doc__ = 'Red, green, and blue color tuple'
@@ -349,53 +358,50 @@ RGB.r.__doc__ = 'Red channel, valid values 0..63'
 RGB.g.__doc__ = 'Green channel, valid values 0..63'
 RGB.b.__doc__ = 'Blue channel, valid values 0..63'
 
-Points: TypeAlias = Union[buffer, list[int], list[tuple[int, int]]]
-
 # Reference to the current music to prevent it from being garbage collected
 _current_music: Music | None = None
 
 # Reference to the current draw target to prevent it from being garbage
 # collected
-_current_draw_target: buffer | None = None
+_current_draw_target: WriteableBuffer | None = None
 
 
-def _data_for_points(points: Points) -> _dos.ffi.CData:
+def _data_for_points(points: Points) -> CData:
     """Return a CFFI data object for an array of ints representing 2D points.
 
     :param points: a buffer of ints, a list of ints, or a list of (x, y) tuples
 
     """
-    if isinstance(points, buffer):
+    if not isinstance(points, list):
+        # Adapt existing buffer
         return _dos.ffi.from_buffer('int[]', points)
     if len(points) < 2:
         raise ValueError('At least two points are required')
     if isinstance(points[0], tuple):
-        points: list[tuple[int, int]]
         xy: list[int] = []
-        for point in points:
+        for point in typing.cast(list[tuple[int, int]], points):
             xy.extend(point)
     else:
-        xy = points
+        xy = typing.cast(list[int], points)
     return _dos.ffi.new('int[]', xy)
 
 
-Samples: TypeAlias = Union[buffer, list[int]]
-
-
-def _data_for_samples(samples: Samples) -> tuple[_dos.ffi.CData, int]:
+def _data_for_samples(samples: Samples) -> tuple[CData, int]:
     """Return CFFI data for an array of shorts representing audio samples.
 
     :param samples: a buffer of shorts, or a list of ints
     :return: a tuple of the sound data, and its size in bytes.  The __len__ of
         the return value is not useful, since it may return the size in bytes
         *or* in words
+    :raises ValueError: if **samples** is a buffer of unknown size
 
     """
-    if isinstance(samples, buffer):
-        result = _dos.ffi.from_buffer('short[]', samples)
-        return result, len(samples)
-    result = _dos.ffi.new('short[]', samples)
-    return result, len(result) * 2
+    if isinstance(samples, list):
+        result = _dos.ffi.new('short[]', samples)
+        return result, len(result) * 2
+    # Adapt existing buffer
+    result = _dos.ffi.from_buffer('short[]', samples)
+    return result, buffer_size(samples)
 
 
 @dataclasses.dataclass
@@ -417,13 +423,14 @@ class GIF:
     """Image pixels in row-major order.  Values are indices of
     :attr:`palette`."""
 
-    _pixels_ptr: _dos.ffi.CData
+    _pixels_ptr: CData
 
     def __del__(self):
         _dos.lib.free(self._pixels_ptr)
 
 
-VideoMode = enum.Enum(
+# mypy can't do dynamic enums
+VideoMode = enum.Enum(  # type: ignore
     'VideoMode', {
         k.removeprefix('videomode_'): v
         for k, v in _dos.lib.__dict__.items() if k.startswith('videomode_')
@@ -492,13 +499,14 @@ class Music:
     filename: str | None
     """Original filename, if loaded from disk."""
 
-    _music_ptr: _dos.ffi.CData
+    _music_ptr: CData
 
     def __del__(self):
         _dos.lib.free(self._music_ptr)
 
 
-SoundMode = enum.Enum(
+# mypy can't do dynamic enums
+SoundMode = enum.Enum(  # type: ignore
     'SoundMode', {
         k.removeprefix('soundmode_'): v
         for k, v in _dos.lib.__dict__.items() if k.startswith('soundmode_')
@@ -585,17 +593,27 @@ class Sound:
     filename: str | None
     """Original filename, if loaded from disk."""
 
-    _sound_ptr: _dos.ffi.CData
+    _sound_ptr: CData
 
     def __del__(self):
         _dos.lib.free(self._sound_ptr)
 
 
-KeyCode = int_with_flags.IntWithFlags(
-    'KeyCode', {
-        k.removeprefix('KEY_'): v
-        for k, v in _dos.lib.__dict__.items() if k.startswith('KEY')
-    })
+if typing.TYPE_CHECKING:
+    # mypy doesn't understand enum subclasses
+    # https://github.com/python/mypy/issues/6037
+    class KeyCode:
+        _flags_: dict[str, int]
+        value: int
+
+        def __init__(self, value: int):
+            ...
+else:
+    KeyCode = int_with_flags.IntWithFlags(
+        'KeyCode', {
+            k.removeprefix('KEY_'): v
+            for k, v in _dos.lib.__dict__.items() if k.startswith('KEY')
+        })
 KeyCode._flags_ = {'KEY_MODIFIER_RELEASED': _dos.lib.KEY_MODIFIER_RELEASED}
 KeyCode.__doc__ = """\
     Keyboard code.
@@ -799,13 +817,30 @@ def new_buffer(data: bytes = None, size: int = None) -> buffer:
     """
     if data is None and size is None:
         raise ValueError('data or size is required')
-    if size is None:
+    if size is None and data is not None:
         size = len(data)
-    return _dos.ffi.buffer(_dos.ffi.new(f'char[{size}]', data), size)
+    return buffer(_dos.ffi.new(f'char[{size}]', data),
+                  size if size is not None else -1)
+
+
+def buffer_size(b: CData | ReadableBuffer | WriteableBuffer | Sized) -> int:
+    """Get the size of a buffer.
+
+    :param b: buffer to use
+    :return: buffer size
+    :raises ValueError: on unknown size
+
+    """
+    try:
+        return len(typing.cast(Sized, b))
+    except TypeError:
+        # buffer type should really be the intersection of the Sized protocol
+        # and the Buffer protocol, but the latter doesn't exist (PEP 688)
+        raise ValueError('Buffer has unknown size')
 
 
 def c_string(s: str | bytes | os.PathLike,
-             encoding: str | dict[str, bytes] = 'utf-8') -> _dos.lib.CData:
+             encoding: str | dict[str, bytes] = 'utf-8') -> CData:
     """Convert a python string-like type to a C string.
 
     :param s: python string-like type
@@ -837,7 +872,7 @@ def get_filename(path: bytes | str | os.PathLike | None) -> str | None:
         return None
     if isinstance(path, bytes):
         path = path.decode('utf-8')
-    if isinstance(path, str):
+    if not isinstance(path, pathlib.Path):
         path = pathlib.Path(path)
     return path.name
 
@@ -899,7 +934,7 @@ def screenbuffer() -> buffer:
     will need to use its returned buffer as the new off-screen buffer.
 
     """
-    return _dos.ffi.buffer(_dos.lib.screenbuffer(), SCREEN_BUFFER_SIZE)
+    return buffer(_dos.lib.screenbuffer(), SCREEN_BUFFER_SIZE)
 
 
 def swapbuffers() -> buffer:
@@ -909,7 +944,7 @@ def swapbuffers() -> buffer:
     :return: the new off-screen buffer
 
     """
-    return _dos.ffi.buffer(_dos.lib.swapbuffers(), SCREEN_BUFFER_SIZE)
+    return buffer(_dos.lib.swapbuffers(), SCREEN_BUFFER_SIZE)
 
 
 def waitvbl() -> None:
@@ -942,6 +977,8 @@ def setpal(
             raise ValueError(
                 'A 3-tuple is required if passing a single RGB value')
         r, g, b = r
+    if g is None or b is None:
+        raise ValueError('All color channels must be specified')
     _dos.lib.setpal(index, r, g, b)
 
 
@@ -1068,7 +1105,7 @@ def loadgif(filename: bytes | str | os.PathLike) -> GIF:
                               palcount_ptr, palette)
 
     if pixels == _dos.ffi.NULL:
-        raise ValueError(f'Unable to load GIF {filename}')
+        raise ValueError(f'Unable to load GIF {filename!r}')
     width = width_ptr[0]
     height = height_ptr[0]
     palcount = palcount_ptr[0]
@@ -1077,15 +1114,17 @@ def loadgif(filename: bytes | str | os.PathLike) -> GIF:
         RGB(palette[3 * i], palette[3 * i + 1], palette[3 * i + 2])
         for i in range(palcount)
     ]
-    pixelbuf = _dos.ffi.buffer(pixels, width * height)
-    return GIF(get_filename(filename), width, height, rgb_palette, pixelbuf,
-               pixels)
+    pixelbuf = buffer(pixels, width * height)
+
+    # get_filename won't return None if filename isn't None
+    name = typing.cast(str, get_filename(filename))
+    return GIF(name, width, height, rgb_palette, pixelbuf, pixels)
 
 
 def blit(
     x: int,
     y: int,
-    source: buffer,
+    source: ReadableBuffer,
     width: int,
     height: int,
     srcx: int,
@@ -1113,7 +1152,7 @@ def blit(
 def maskblit(
     x: int,
     y: int,
-    source: buffer,
+    source: ReadableBuffer,
     width: int,
     height: int,
     srcx: int,
@@ -1179,7 +1218,7 @@ def putpixel(x: int, y: int, color: int) -> None:
     _dos.lib.putpixel(x, y, color)
 
 
-def setdrawtarget(pixels: buffer, width: int, height: int) -> None:
+def setdrawtarget(pixels: WriteableBuffer, width: int, height: int) -> None:
     """Start drawing to an off-screen buffer.
 
     :param pixels: pixel buffer to draw to
@@ -1192,7 +1231,7 @@ def setdrawtarget(pixels: buffer, width: int, height: int) -> None:
     """
     global _current_draw_target
     size = width * height
-    if len(pixels) < size:
+    if buffer_size(pixels) < size:
         raise ValueError(f'pixel buffer must be at least {size} bytes')
     _dos.lib.setdrawtarget(_dos.ffi.from_buffer(pixels), width, height)
     # Retain the draw target to prevent it from being garbage collected
@@ -1333,13 +1372,13 @@ def drawpoly(points_xy: Points) -> None:
 
         * a list of 𝑥, 𝑦 tuples: ``[(x1, y1), (x2, y2), ...]``
         * a flattened list of points: ``[x1, y1, x2, y2, ...]``
-        * an ``int[]`` :obj:`buffer`
+        * an ``int[]`` buffer
 
     The palette index set by :func:`setcolor` will be used.
 
     """
     points_data = _data_for_points(points_xy)
-    count = len(points_data) // 2
+    count = buffer_size(points_data) // 2
     _dos.lib.drawpoly(points_data, count)
 
 
@@ -1350,13 +1389,13 @@ def fillpoly(points_xy: Points) -> None:
 
         * a list of 𝑥, 𝑦 tuples: ``[(x1, y1), (x2, y2), ...]``
         * a flattened list of points: ``[x1, y1, x2, y2, ...]``
-        * an ``int[]`` :obj:`buffer`
+        * an ``int[]`` buffer
 
     The palette index set by :func:`setcolor` will be used.
 
     """
     points_data = _data_for_points(points_xy)
-    count = len(points_data) // 2
+    count = buffer_size(points_data) // 2
     _dos.lib.fillpoly(points_data, count)
 
 
@@ -1468,7 +1507,7 @@ def installuserfont(filename: bytes | str | os.PathLike) -> FontHandle:
     """
     result: int = _dos.lib.installuserfont(c_string(filename))
     if result == 0:
-        raise ValueError(f'Failed to load font {filename}')
+        raise ValueError(f'Failed to load font {filename!r}')
     return FontHandle(result)
 
 
@@ -1495,7 +1534,7 @@ def installusersoundbank(
     """
     result: int = _dos.lib.installuserfont(c_string(filename))
     if result == 0:
-        raise ValueError(f'Failed to load soundbank {filename}')
+        raise ValueError(f'Failed to load soundbank {filename!r}')
     return SoundBankHandle(result)
 
 
@@ -1563,7 +1602,7 @@ def loadmid(filename: bytes | str | os.PathLike) -> Music:
     """
     result = _dos.lib.loadmid(c_string(filename))
     if result == _dos.ffi.NULL:
-        raise ValueError(f'Failed to load music {filename}')
+        raise ValueError(f'Failed to load music {filename!r}')
     return Music(get_filename(filename), result)
 
 
@@ -1578,7 +1617,7 @@ def loadmus(filename: bytes | str | os.PathLike) -> Music:
     """
     result = _dos.lib.loadmus(c_string(filename))
     if result == _dos.ffi.NULL:
-        raise ValueError(f'Failed to load music {filename}')
+        raise ValueError(f'Failed to load music {filename!r}')
     return Music(get_filename(filename), result)
 
 
@@ -1593,7 +1632,7 @@ def loadmod(filename: bytes | str | os.PathLike) -> Music:
     """
     result = _dos.lib.loadmod(c_string(filename))
     if result == _dos.ffi.NULL:
-        raise ValueError(f'Failed to load music {filename}')
+        raise ValueError(f'Failed to load music {filename!r}')
     return Music(get_filename(filename), result)
 
 
@@ -1608,11 +1647,11 @@ def loadopb(filename: bytes | str | os.PathLike) -> Music:
     """
     result = _dos.lib.loadopb(c_string(filename))
     if result == _dos.ffi.NULL:
-        raise ValueError(f'Failed to load music {filename}')
+        raise ValueError(f'Failed to load music {filename!r}')
     return Music(get_filename(filename), result)
 
 
-def createmus(data: buffer | bytes) -> Music:
+def createmus(data: ReadableBuffer | bytes) -> Music:
     """Load music from an in-memory
      `MUS <https://moddingwiki.shikadi.net/wiki/MUS_Format>`_ (.mus) buffer.
 
@@ -1625,7 +1664,7 @@ def createmus(data: buffer | bytes) -> Music:
         c_data = _dos.ffi.new('char[]', data)
     else:
         c_data = _dos.ffi.from_buffer(data)
-    result = _dos.lib.createmus(c_data, len(data))
+    result = _dos.lib.createmus(c_data, buffer_size(data))
     if result == _dos.ffi.NULL:
         raise ValueError
     return Music(filename=None, _music_ptr=result)
@@ -1700,7 +1739,7 @@ def loadwav(filename: bytes | str | os.PathLike) -> Sound:
     """
     result = _dos.lib.loadwav(c_string(filename))
     if result == _dos.ffi.NULL:
-        raise ValueError(f'Unable to load sound {filename}')
+        raise ValueError(f'Unable to load sound {filename!r}')
     return Sound(get_filename(filename), result)
 
 

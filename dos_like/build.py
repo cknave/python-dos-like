@@ -2,6 +2,7 @@
 import os
 import pathlib
 import platform
+from typing import Callable
 
 import cffi
 
@@ -25,6 +26,7 @@ else:
     platform_frameworks = []
 
 # Windows doesn't need any libraries at all
+set_source: Callable[..., None]
 if platform.system() == 'Windows':
     set_source = ffibuilder.set_source
 else:

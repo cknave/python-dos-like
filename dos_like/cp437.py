@@ -16,4 +16,5 @@ CP437 = ('\u0000☺☻♥♦♣♠•◘○◙♂♀♪♫☼'
          'αßΓπΣσµτΦΘΩδ∞φε∩'
          '≡±≥≤⌠⌡÷≈°∙·√ⁿ²■\u00a0')
 
-ENCODING = {CP437[i]: bytearray([i]) for i in range(256)}
+# Thanks for making me specify the endianness of 1 byte, Python
+ENCODING = {CP437[i]: i.to_bytes(1, 'little') for i in range(256)}
