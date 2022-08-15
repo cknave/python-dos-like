@@ -1,6 +1,13 @@
 Release History
 ===============
 
+0.0.3 (14-Aug-2022)
+-------------------
+- Free dos-like allocated buffers when owning Python object is deleted
+- Standardize on always raising an exception instead of sometimes returning
+  ``None``
+- Types are mypy approved
+
 0.0.2 (11-Aug-2022)
 -------------------
 - Upgrade to dos-like d174ca4f
