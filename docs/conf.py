@@ -30,8 +30,15 @@ hide_none_rtype = True
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # Links to external documentation
-intersphinx_mapping = {'python': ('https://docs.python.org/3', None)}
+intersphinx_mapping = {
+    'python': ('https://docs.python.org/3', None),
 
+    # see make-cffi-cdata.py:
+    'cffi': ('https://cffi.readthedocs.io/en/latest/', 'cffi-cdata.inv'),
+}
+
+# Error if reference targets can't be found
+nitpicky = True
 
 # -- Options for HTML output -------------------------------------------------
 

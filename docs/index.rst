@@ -5,6 +5,7 @@ python-dos-like
    :maxdepth: 3
    :caption: Contents:
 
+   differences
    reference
 
 .. toctree::
