@@ -197,8 +197,8 @@ should be used instead of searching for a NUL character:
   #   length++;
   # }
   # printf("There were %d characters in the buffer.\n", length);
-  keys = readkeys()
-  for key in keys:
-      if key == KEY_A:
+  chars = readchars()
+  for char in chars:
+      if char == 'a':
           print('A was pressed')
-  print(f'There were {len(keys)} keys in the buffer.')
+  print(f'There were {len(chars)} characters in the buffer.')
