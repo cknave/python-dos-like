@@ -1,10 +1,13 @@
+import sys
 import unittest
 from unittest import mock
 
 import dos_like
+from dos_like import runner
+from tests import helpers
 
 
-class TestRunner(unittest.TestCase):
+class TestRunner(helpers.PlatformSetter, unittest.TestCase):
 
     def test_main_fn_is_called(self):
         main = mock.MagicMock()
@@ -38,3 +41,12 @@ class TestRunner(unittest.TestCase):
                 dos_like.start(main)
         finally:
             dos_like.stop()
+
+    def test_run_in_background_raises_runtime_error_on_macos(self):
+        real_is_macos = runner._is_macos
+        try:
+            runner._is_macos = True
+            with self.assertRaises(RuntimeError):
+                dos_like.run_in_background()
+        finally:
+            runner._is_macos = real_is_macos

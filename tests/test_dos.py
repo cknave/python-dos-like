@@ -8,9 +8,10 @@ import uuid
 
 import dos_like
 from dos_like import _dos, dos
+from tests import helpers
 
 
-class DosAPITests(unittest.TestCase):
+class DosAPITests(helpers.PlatformSetter, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:

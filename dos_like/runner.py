@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import sys
 import threading
 from typing import Callable, Optional
 
@@ -14,6 +15,7 @@ MainFunc: TypeAlias = Callable[[], Optional[int]]
 """dos-like python main function."""
 
 _bg_thread: BackgroundThread | None = None
+_is_macos: bool = sys.platform == 'darwin'
 _main_fn: MainFunc | None = None
 _raised_exception: Exception | None = None
 
@@ -88,11 +90,20 @@ def run_in_background(argv: list[str] = None) -> None:
 
     Once returned, :mod:`dos_like.dos` functions may be called.
 
+    .. warning::
+
+        This function cannot be used in macOS, as it does not support calling
+        GUI operations from a background thread.
+
     """
     global _bg_thread
 
     if _bg_thread:
         raise RuntimeError('Already running in background')
+
+    if _is_macos:
+        raise RuntimeError(
+            'macOS does not support GUI operations from a background thread')
 
     thread = BackgroundThread()
     thread.argv = argv

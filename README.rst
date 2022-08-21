@@ -110,10 +110,30 @@ Several environment variables may be set to control compile-time options:
 Limitations
 -----------
 
-This library has been tested on Linux and Windows.  It builds on macOS, however running in
-the background raises an AppKit assertion.  Building on WebAssembly should be a real challenge.
+Memory management
+~~~~~~~~~~~~~~~~~
 
 Memory allocated by dos-like will be freed when its corresponding bython buffer object is
 garbage collected.  The current draw target and music will be retained even if no other python
 code has a reference, but any playing sounds will not be.  Deleting or releasing the last
 reference to a playing sound may cause issues.
+
+Platforms
+~~~~~~~~~
+
+This library has been tested on Linux, Windows, and macOS.
+
+macOS does not support GUI operations in a background thread, so it cannot be used from the
+Python REPL by calling ``run_in_background()``.
+
+python-dos-like can be compiled as a WebAssembly Pyodide_ module, but will fail to import due to
+a missing symbol from WAjic_.  Even if this symbol (``J``, an object containing JS functions to
+be called from C) is added to the imports when loaded by Pyodide, it does not appear to be
+compatible.
+
+It is not clear to me what the best way forward is for WebAssembly support: getting a Pyodide
+module to import WAjic functions, building a Pyodide module in WAjic, or removing Pyodide or
+WAjic from the project entirely.
+
+.. _Pyodide: https://pyodide.org/en/stable/index.html
+.. _WAjic: https://wajic.github.io/
