@@ -99,20 +99,19 @@ jobs:
           path: dist/*.whl
   release:
     needs: ["sdist", "manylinux", "wheel"]
-    environment: testing
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [ "testing", "production" ]
+    environment: ${{ matrix.environment }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v3
-        with:
-          python-version: "3.10"
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
           name: dist
           path: dist
-      - name: Publish to PyPI
+      - name: Publish to ${{ matrix.environment }} PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_TOKEN }}
