@@ -1,6 +1,10 @@
 Release History
 ===============
 
+0.0.4 (21-Aug 2022)
+-------------------
+- Raise a runtime error when trying to run in the background on macOS
+
 0.0.3 (14-Aug-2022)
 -------------------
 - Free dos-like allocated buffers when owning Python object is deleted
