@@ -1,0 +1,74 @@
+[build-system]
+requires = [
+    "setuptools>=61.2",
+    "cffi>=1.15.1,<2",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "python-dos-like"
+version = "0.0.4"
+description = "Python bindings for the dos-like programming library"
+authors = [{name = "kvance", email = "kvance@kvance.com"}]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Software Development :: Libraries",
+]
+dependencies = [
+    "aenum>=3.1.11,<4",
+    "cffi>=1.15.1,<2",
+    "typing-extensions>=4.3.0;python_version<'3.10'",
+]
+
+[project.readme]
+file = "README.rst"
+content-type = "text/x-rst"
+
+[project.urls]
+Homepage = "https://github.com/cknave/python-dos-like"
+
+[project.optional-dependencies]
+dev = [
+    "build>=0.8.0,<1",
+    "coverage==6.4.3",
+    "flake8==5.0.4",
+    "flake8-comprehensions==3.10.0",
+    "flake8-import-order==0.18.1",
+    "flake8-quotes==3.3.1",
+    "mypy==0.971",
+    "toml==0.10.2",
+    "sphinx==5.1.1",
+    "sphinx-toolbox==3.1.2",
+    "sphinx-rtd-theme==1.0.0",
+    "twine==4.0.1,<5",
+    "yapf==0.32.0",
+]
+
+[tool.setuptools]
+packages = ["dos_like"]
+include-package-data = false
+
+[tool.coverage.run]
+branch = true
+concurrency = ["thread"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "if typing.TYPE_CHECKING:",
+    "pragma: no cover",
+]
+fail_under = 98
+show_missing = true
+
+[tool.mypy]
+mypy_path = "stubs"
+
+[tool.yapf]
+allow_split_before_dict_value = "false"
+indent_dictionary_value = "true"

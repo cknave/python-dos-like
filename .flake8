@@ -1,0 +1,4 @@
+[flake8]
+application_import_names = dos_like,tests
+exclude = build,dist,dos_like/build.py,example.py,.*
+import_order_style = pycharm
