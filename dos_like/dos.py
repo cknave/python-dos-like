@@ -1659,6 +1659,7 @@ def loadopb(filename: bytes | str | os.PathLike) -> Music:
 
 
 def createmus(data: ReadableBuffer | bytes) -> Music:
+    # TODO: why is this docstring rendered weird?
     """Load music from an in-memory
      `MUS <https://moddingwiki.shikadi.net/wiki/MUS_Format>`_ (.mus) buffer.
 
