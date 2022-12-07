@@ -10,12 +10,13 @@ on:
     branches: [ "main" ]
 
 env:
+  MACOS_SDL_URL: https://github.com/libsdl-org/SDL/releases/download/release-2.26.1/SDL2-2.26.1.tar.gz
   SDL_AUDIODRIVER: disk
   SDL_DISKAUDIOFILE: /dev/null
 
 jobs:
   test:
-    timeout-minutes: 10
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
@@ -39,7 +40,21 @@ jobs:
     - name: Install macOS dependencies
       if: matrix.os == 'macos-latest'
       run: |
-        brew install sdl2 glew
+        brew install glew
+        # Brew won't give us a universal library, so make one ourselves
+        wget -nv $MACOS_SDL_URL
+        wget -nv $MACOS_SDL_URL.sig
+        gpg --keyserver keyserver.ubuntu.com --receive-keys 1528635D8053A57F77D1E08630A59377A7763BE6
+        gpg --verify SDL*.sig SDL*.tar.gz
+        tar xzf SDL*.tar.gz
+        cd SDL*
+        mkdir build
+        cd build
+        CC=`pwd`/../build-scripts/clang-fat.sh ../configure
+        make
+        make install
+        cd ../..
+        rm -rf SDL*
     - name: Install Python dependencies
       # Use NULL_PLATFORM to avoid needing graphics/sound on mac/win
       env:
